@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1BDD3 — Initiation aux Bases de Données & au MCD</title>
+<style>
+  :root{
+    --ink:#1b2330;
+    --ink-soft:#54606f;
+    --paper:#f6f7f4;
+    --panel:#ffffff;
+    --canvas-dot:rgba(38,58,99,.10);
+    --line:#dcdfd7;
+
+    --navy:#263a63;
+    --navy-soft:#4a5c8c;
+    --gold:#b0812a;
+    --gold-bg:#f7f0dc;
+    --link:#356aa8;
+    --link-bg:#e9f0f9;
+
+    --amber-bg:#fbf3e3;  --amber-bd:#cf9a35;  --amber-tx:#7a5410;
+    --blue-bg:#e9f0f9;   --blue-bd:#356aa8;   --blue-tx:#26466f;
+    --purple-bg:#f0edf8; --purple-bd:#7259b8; --purple-tx:#41306f;
+    --green-bg:#e8f3ec;  --green-bd:#379159;  --green-tx:#1e5c37;
+    --meta-bg:#f6efdc;   --meta-bd:#b0812a;   --meta-tx:#6b4d12;
+
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);
+    font-family:var(--sans);font-size:16.5px;line-height:1.65;
+    background-color:var(--paper);
+    background-image:radial-gradient(var(--canvas-dot) 1.1px, transparent 1.1px);
+    background-size:22px 22px;
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{display:flex;align-items:flex-start;max-width:1200px;margin:0 auto;}
+
+  nav.toc{
+    position:sticky;top:0;align-self:flex-start;
+    width:262px;flex:0 0 262px;height:100vh;overflow-y:auto;
+    padding:24px 16px 40px 20px;border-right:1px solid var(--line);
+    background:rgba(255,255,255,.72);backdrop-filter:blur(2px);
+  }
+  nav.toc .toc-title{
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--navy-soft);font-weight:700;margin:0 0 4px;
+    display:flex;align-items:center;gap:7px;
+  }
+  nav.toc .toc-title::before{content:"▤";color:var(--gold);font-size:.9rem;}
+  nav.toc .toc-note{font-family:var(--mono);font-size:.62rem;color:#8b93a1;margin:0 0 14px;letter-spacing:.04em;}
+  nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:tocnum;}
+  nav.toc > ol > li{counter-increment:tocnum;margin:1px 0;}
+  nav.toc a{
+    display:flex;gap:9px;text-decoration:none;color:var(--ink-soft);
+    padding:5px 9px;border-radius:6px;font-size:.9rem;line-height:1.35;
+    border-left:2px solid transparent;
+  }
+  nav.toc > ol > li > a::before{
+    content:counter(tocnum,decimal-leading-zero);
+    font-family:var(--mono);font-size:.72rem;color:var(--gold);font-weight:700;
+    padding-top:2px;flex:0 0 auto;
+  }
+  nav.toc a:hover{background:var(--gold-bg);color:var(--navy);border-left-color:var(--gold);}
+
+  main{flex:1 1 auto;min-width:0;padding:40px 40px 90px;max-width:860px;}
+
+  header.entity{
+    border:1.5px solid var(--navy);border-radius:10px;overflow:hidden;
+    background:var(--panel);margin-bottom:30px;
+    box-shadow:0 1px 0 var(--line),6px 6px 0 rgba(38,58,99,.06);
+  }
+  .entity-bar{
+    background:var(--navy);color:#fff;padding:9px 16px;
+    font-family:var(--mono);font-size:.86rem;letter-spacing:.02em;
+    display:flex;align-items:center;gap:9px;
+  }
+  .entity-bar .glyph{color:var(--gold);}
+  .entity-bar .badge{
+    margin-left:auto;font-size:.62rem;letter-spacing:.14em;
+    background:rgba(255,255,255,.14);padding:2px 8px;border-radius:4px;
+  }
+  .entity-body{padding:22px 24px 6px;}
+  .entity-body .eyebrow{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--navy-soft);font-weight:700;margin-bottom:10px;
+  }
+  .entity-body h1{
+    font-size:2rem;line-height:1.13;margin:0 0 8px;color:var(--navy);
+    letter-spacing:-.015em;font-weight:800;
+  }
+  .entity-body .sub{color:var(--ink-soft);font-size:1.02rem;margin:0 0 4px;}
+
+  .cols-cap{
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:#8b93a1;padding:10px 24px 6px;border-top:1px dashed var(--line);
+  }
+  ul.columns{list-style:none;margin:0;padding:0 24px 18px;counter-reset:col;}
+  ul.columns li{
+    counter-increment:col;display:flex;align-items:baseline;gap:12px;
+    padding:6px 0;border-bottom:1px solid #eef0ea;font-size:.96rem;
+  }
+  ul.columns li:last-child{border-bottom:none;}
+  ul.columns li .num{font-family:var(--mono);font-size:.72rem;color:var(--gold);font-weight:700;flex:0 0 26px;}
+  ul.columns li .key{flex:0 0 16px;color:var(--gold);}
+  ul.columns li .colname{flex:1 1 auto;}
+  ul.columns li .type{
+    font-family:var(--mono);font-size:.68rem;color:var(--link);
+    background:var(--link-bg);padding:2px 8px;border-radius:4px;white-space:nowrap;
+  }
+
+  details.toc-mobile{display:none;}
+  .prereq-lead{margin-top:6px;}
+  .lead{font-size:1.05rem;color:var(--ink-soft);}
+
+  main{counter-reset:sec;}
+  h2{
+    counter-increment:sec;counter-reset:sub;
+    font-size:1.48rem;color:var(--navy);margin:54px 0 14px;font-weight:800;
+    letter-spacing:-.01em;scroll-margin-top:14px;
+    display:flex;align-items:center;gap:12px;
+    padding-bottom:9px;border-bottom:2px solid var(--navy);
+  }
+  h2::before{
+    content:"§" counter(sec);font-family:var(--mono);font-size:.8rem;font-weight:700;
+    color:#fff;background:var(--navy);padding:3px 9px;border-radius:5px;letter-spacing:.02em;
+    flex:0 0 auto;
+  }
+  h3{
+    counter-increment:sub;font-size:1.12rem;color:var(--ink);margin:30px 0 8px;
+    font-weight:700;scroll-margin-top:14px;display:flex;gap:10px;align-items:baseline;
+  }
+  h3::before{
+    content:counter(sec) "." counter(sub);font-family:var(--mono);font-size:.78rem;
+    color:var(--gold);font-weight:700;flex:0 0 auto;
+  }
+  p{margin:.6em 0;}
+  strong{color:var(--ink);}
+
+  ul.clean,ol.clean{padding-left:22px;}
+  ul.clean li,ol.clean li{margin:5px 0;}
+
+  table{
+    width:100%;border-collapse:collapse;margin:16px 0;font-size:.93rem;
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);
+  }
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{
+    background:var(--navy);color:#fff;font-weight:600;border-color:var(--navy);
+    font-family:var(--mono);font-size:.82rem;letter-spacing:.01em;
+  }
+  tbody tr:nth-child(even){background:#f4f5f0;}
+  td code{white-space:nowrap;}
+
+  code{
+    font-family:var(--mono);font-size:.86em;background:#edefe9;
+    padding:.08em .38em;border-radius:4px;color:#33405a;
+  }
+  pre{
+    background:#1a2130;color:#e7ebf2;border-radius:9px;padding:0 0 16px;
+    overflow:hidden;font-family:var(--mono);font-size:.86rem;line-height:1.6;margin:14px 0;
+    border:1px solid #0f1420;
+  }
+  pre::before{
+    content:"sql";display:block;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+    color:#8b93a1;background:#141a27;padding:6px 16px;border-bottom:1px solid #0f1420;
+  }
+  pre.java::before{content:"java";}
+  pre code{background:none;padding:0 18px;color:inherit;font-size:1em;display:block;margin-top:14px;overflow-x:auto;}
+  .kw{color:#c792ea;} .str{color:#8bd49c;} .com{color:#8790a0;font-style:italic;}
+  .num{color:#e0a366;} .fn{color:#82aaff;}
+
+  .box{border-radius:9px;padding:13px 16px;margin:16px 0;border-left:5px solid;font-size:.95rem;background:var(--panel);}
+  .box .lbl{font-weight:700;display:block;margin-bottom:3px;font-family:var(--mono);font-size:.82rem;letter-spacing:.01em;}
+  .box p{margin:.3em 0;}
+  .box.warn {background:var(--amber-bg); border-color:var(--amber-bd);}   .box.warn .lbl{color:var(--amber-tx);}
+  .box.tip  {background:var(--blue-bg);  border-color:var(--blue-bd);}    .box.tip .lbl{color:var(--blue-tx);}
+  .box.recall{background:var(--purple-bg);border-color:var(--purple-bd);} .box.recall .lbl{color:var(--purple-tx);}
+  .box.key  {background:var(--green-bg); border-color:var(--green-bd);}   .box.key .lbl{color:var(--green-tx);}
+  .box.meta {background:var(--meta-bg); border-color:var(--meta-bd);}     .box.meta .lbl{color:var(--meta-tx);}
+  .box.meta em{color:var(--meta-tx);font-style:italic;}
+
+  figure{margin:22px 0;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    box-shadow:4px 4px 0 rgba(38,58,99,.05);}
+  figure svg{width:100%;height:auto;display:block;}
+  figcaption{font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);text-align:center;margin-top:10px;letter-spacing:.02em;}
+
+  .recap thead th{background:var(--gold);color:#3a2a06;border-color:var(--gold);}
+  .recap tbody td:first-child{border-left:3px solid var(--gold);}
+
+  .footer-note{
+    margin-top:36px;color:var(--ink-soft);font-size:.9rem;
+    border-top:1px solid var(--line);padding-top:14px;
+  }
+
+  @media (max-width:900px){
+    body{background-size:18px 18px;}
+    nav.toc{display:none;}
+    main{padding:22px 16px 70px;}
+    .entity-body{padding:18px 18px 4px;}
+    .entity-body h1{font-size:1.55rem;}
+    .cols-cap,ul.columns{padding-left:18px;padding-right:18px;}
+    ul.columns li .type{display:none;}
+    details.toc-mobile{
+      display:block;margin:0 0 22px;border:1px solid var(--line);border-radius:9px;
+      background:var(--panel);padding:10px 14px;
+    }
+    details.toc-mobile summary{font-family:var(--mono);font-weight:700;color:var(--navy);cursor:pointer;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;}
+    details.toc-mobile ol{margin:10px 0 2px;padding-left:20px;}
+    details.toc-mobile a{color:var(--navy-soft);text-decoration:none;}
+    h2{font-size:1.28rem;}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="toc" aria-label="Sommaire">
+    <p class="toc-title">Schéma du cours</p>
+    <p class="toc-note">9 sections · SELECT * FROM cours</p>
+    <ol>
+      <li><a href="#s1">Pourquoi une base de données&nbsp;?</a></li>
+      <li><a href="#s2">Le vocabulaire relationnel</a></li>
+      <li><a href="#s3">Le pont avec la POO Java</a></li>
+      <li><a href="#s4">La méthode Merise</a></li>
+      <li><a href="#s5">Le MCD en détail</a></li>
+      <li><a href="#s6">Les cardinalités</a></li>
+      <li><a href="#s7">Du MCD au MLD</a></li>
+      <li><a href="#s8">Ce qu'il faut retenir</a></li>
+      <li><a href="#s9">Réflexes à garder</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="entity">
+      <div class="entity-bar">
+        <span class="glyph">▤</span> 1BDD3.fondations
+        <span class="badge">ENTITÉ</span>
+      </div>
+      <div class="entity-body">
+        <div class="eyebrow">Bases de Données · Jours 1 &amp; 2</div>
+        <h1>Bases de données &amp; MCD&nbsp;: les fondations</h1>
+        <p class="sub">Comprendre <em>ce qu'on stocke</em>, <em>pourquoi</em> on le fait, et comment on le dessine avant d'écrire la moindre ligne de code.</p>
+      </div>
+      <div class="cols-cap">colonnes — au programme aujourd'hui</div>
+      <ul class="columns">
+        <li><span class="num">01</span><span class="key">🔑</span><span class="colname">Pourquoi les bases de données existent</span><span class="type">motivation</span></li>
+        <li><span class="num">02</span><span class="key"></span><span class="colname">Vocabulaire&nbsp;: table, ligne, colonne, PK, FK</span><span class="type">vocabulaire</span></li>
+        <li><span class="num">03</span><span class="key"></span><span class="colname">Le pont avec la POO Java</span><span class="type">bridge</span></li>
+        <li><span class="num">04</span><span class="key"></span><span class="colname">La méthode Merise (MCD, MLD, MPD)</span><span class="type">méthode</span></li>
+        <li><span class="num">05</span><span class="key"></span><span class="colname">Le MCD&nbsp;: entités, attributs, associations</span><span class="type">modélisation</span></li>
+        <li><span class="num">06</span><span class="key"></span><span class="colname">Les cardinalités&nbsp;: «&nbsp;combien de fois&nbsp;?&nbsp;»</span><span class="type">modélisation</span></li>
+        <li><span class="num">07</span><span class="key"></span><span class="colname">Passage du MCD au MLD (FK &amp; tables associatives)</span><span class="type">transformation</span></li>
+      </ul>
+    </header>
+
+    <details class="toc-mobile">
+      <summary>▤ Schéma du cours</summary>
+      <ol>
+        <li><a href="#s1">Pourquoi une base de données&nbsp;?</a></li>
+        <li><a href="#s2">Le vocabulaire relationnel</a></li>
+        <li><a href="#s3">Le pont avec la POO Java</a></li>
+        <li><a href="#s4">La méthode Merise</a></li>
+        <li><a href="#s5">Le MCD en détail</a></li>
+        <li><a href="#s6">Les cardinalités</a></li>
+        <li><a href="#s7">Du MCD au MLD</a></li>
+        <li><a href="#s8">Ce qu'il faut retenir</a></li>
+        <li><a href="#s9">Réflexes à garder</a></li>
+      </ol>
+    </details>
+
+    <div class="box recall prereq-lead">
+      <span class="lbl">📝 Prérequis</span>
+      <p>Vous venez de terminer la <strong>POO en Java</strong>&nbsp;: vous savez ce qu'est une <em>classe</em>, un <em>objet</em>, un <em>attribut</em>. C'est exactement le pont qu'on va emprunter aujourd'hui. Un peu de logique et d'algorithmique suffisent pour le reste. Aucune connaissance BDD n'est attendue.</p>
+    </div>
+
+    <p class="lead">Fil rouge de tout le module&nbsp;: <strong>BiblioTech</strong>, la modernisation d'une bibliothèque universitaire qui gère 50&nbsp;000 livres… avec des fiches cartonnées depuis 1995. On va remplacer ces tiroirs par une vraie base de données.</p>
+
+    <h2 id="s1">Pourquoi une base de données&nbsp;?</h2>
+
+    <h3>Le problème&nbsp;: les fiches cartonnées</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Imaginez la bibliothèque de BiblioTech&nbsp;: <strong>trois tiroirs remplis de fiches cartonnées</strong>. Pour savoir si «&nbsp;Clean Code&nbsp;» est disponible, Sophie fouille pendant 15&nbsp;minutes. La fiche dit «&nbsp;disponible&nbsp;»… mais le livre a été emprunté sans que personne ne le note. Résultat&nbsp;: 200 livres perdus dans l'année.</p>
+      <p>Une <strong>base de données</strong>, c'est ce même tiroir de fiches — mais rangé, indexé, jamais en double, et interrogeable en une fraction de seconde.</p>
+    </div>
+
+    <p><strong>Définition.</strong> Une base de données (BDD) est un ensemble de données <em>organisées</em> pour être <em>stockées durablement</em> et <em>retrouvées rapidement et de façon fiable</em>. Sans elle, impossible de tenir un e-commerce, une banque ou même une petite appli mobile.</p>
+
+    <p>Concrètement, une BDD sert à&nbsp;:</p>
+    <ul class="clean">
+      <li><strong>Stocker</strong> des millions d'informations sans les perdre&nbsp;;</li>
+      <li><strong>Organiser</strong> ces informations pour éviter les doublons et les erreurs&nbsp;;</li>
+      <li><strong>Retrouver</strong> n'importe quelle donnée instantanément.</li>
+    </ul>
+
+    <div class="box key">
+      <span class="lbl">🎯 Pourquoi on fait ça</span>
+      <p>100&nbsp;% des applications professionnelles utilisent au moins une base de données. Un développeur backend passe environ <strong>70&nbsp;% de son temps</strong> à interagir avec la BDD. Un e-commerce moyen exécute plus de <strong>10&nbsp;000 requêtes par minute</strong>. Bref&nbsp;: savoir modéliser des données, c'est le socle du métier.</p>
+    </div>
+
+    <h3>Le SGBD&nbsp;: le magasinier</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Les fiches ne se rangent pas toutes seules. Il faut un <strong>magasinier</strong> qui reçoit les demandes, va chercher la bonne fiche, la modifie, et empêche deux personnes de la modifier en même temps. Ce magasinier, c'est le <strong>SGBD</strong>.</p>
+    </div>
+
+    <p><strong>Définition.</strong> Un <strong>SGBD</strong> (Système de Gestion de Base de Données) est le logiciel qui gère la base à votre place. Exemples&nbsp;: <strong>MySQL</strong>, MariaDB, PostgreSQL, Oracle, SQL Server. Il assure quatre missions&nbsp;:</p>
+    <ul class="clean">
+      <li><strong>Stocker</strong> les données de façon structurée et persistante&nbsp;;</li>
+      <li><strong>Interroger</strong> les données via un langage dédié, le <strong>SQL</strong> («&nbsp;Structured Query Language&nbsp;», c'est-à-dire «&nbsp;langage structuré de requêtes&nbsp;»)&nbsp;;</li>
+      <li><strong>Modifier</strong> les données (ajout, mise à jour, suppression)&nbsp;;</li>
+      <li><strong>Sécuriser &amp; garantir l'intégrité</strong> (droits d'accès, cohérence).</li>
+    </ul>
+
+    <div class="box tip">
+      <span class="lbl">💡 Bon à savoir</span>
+      <p>Le mot «&nbsp;base de données&nbsp;» désigne les <em>données</em>. Le <strong>SGBD</strong> désigne le <em>logiciel</em> qui les gère. On dit «&nbsp;<em>la base bibliotech tourne sous MySQL</em>&nbsp;»&nbsp;: <code>bibliotech</code> est la base, MySQL est le SGBD.</p>
+    </div>
+
+    <h3>Relationnel (SQL) ou NoSQL&nbsp;?</h3>
+    <p>Il existe deux grandes familles de bases. Vous travaillerez sur la première, mais il faut savoir situer la seconde.</p>
+    <table>
+      <thead><tr><th>Famille</th><th>Principe</th><th>Exemples</th><th>Idéal pour…</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Relationnel (SQL)</strong></td><td>Données rangées en <em>tables liées</em> entre elles</td><td>MySQL, PostgreSQL, Oracle</td><td>Données structurées avec relations claires (banque, e-commerce, bibliothèque)</td></tr>
+        <tr><td><strong>NoSQL</strong></td><td>Documents, clé-valeur, colonnes ou graphes</td><td>MongoDB, Redis, Neo4j</td><td>Structure très souple, volumes gigantesques, cache</td></tr>
+      </tbody>
+    </table>
+    <div class="box warn">
+      <span class="lbl">⚠️ La confusion classique</span>
+      <p>NoSQL ne veut <strong>pas</strong> dire «&nbsp;sans base de données&nbsp;» ni «&nbsp;plus moderne donc mieux&nbsp;». Ça signifie «&nbsp;<em>Not Only SQL</em>&nbsp;». BiblioTech est <strong>relationnel</strong>&nbsp;: un emprunt DOIT être relié à UN livre et UN adhérent — c'est précisément ce que le modèle relationnel garantit.</p>
+    </div>
+
+    <h2 id="s2">Le vocabulaire des bases relationnelles</h2>
+    <p>Cinq mots à maîtriser. On les file avec la métaphore du <strong>tiroir de fiches</strong>.</p>
+
+    <h3>Table, ligne, colonne</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Une <strong>table</strong> = un <strong>tiroir</strong> ne contenant que des fiches du même modèle (toutes les fiches «&nbsp;livre&nbsp;»). Une <strong>ligne</strong> = <strong>une fiche</strong> précise (le livre «&nbsp;Clean Code&nbsp;»). Une <strong>colonne</strong> = une <strong>rubrique</strong> imprimée sur toutes les fiches (le titre, l'auteur, l'année…).</p>
+    </div>
+    <table>
+      <thead><tr><th>Terme</th><th>Aussi appelé</th><th>Définition</th><th>Exemple BiblioTech</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Table</strong></td><td>Relation</td><td>Structure qui stocke des données de même nature</td><td>la table <code>livres</code></td></tr>
+        <tr><td><strong>Ligne</strong></td><td>Enregistrement</td><td>Une entrée précise dans la table</td><td>le livre «&nbsp;Clean Code&nbsp;»</td></tr>
+        <tr><td><strong>Colonne</strong></td><td>Champ</td><td>Une propriété commune à toutes les lignes</td><td><code>titre</code>, <code>auteur</code>, <code>annee</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>Exemple concret — la table <code>livres</code>&nbsp;:</strong></p>
+    <table>
+      <thead><tr><th>id_livre&nbsp;🔑</th><th>titre</th><th>auteur</th><th>isbn</th><th>annee</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Clean Code</td><td>Robert C. Martin</td><td>978-0132350884</td><td>2008</td></tr>
+        <tr><td>2</td><td>Design Patterns</td><td>Gang of Four</td><td>978-0201633610</td><td>1994</td></tr>
+        <tr><td>3</td><td>The Pragmatic Programmer</td><td>Hunt &amp; Thomas</td><td>978-0135957059</td><td>2019</td></tr>
+      </tbody>
+    </table>
+    <p>Chaque <strong>ligne</strong> est un livre. Chaque <strong>colonne</strong> est une rubrique. La colonne <code>id_livre</code> porte la clé&nbsp;🔑&nbsp;: on l'explique juste après.</p>
+
+    <h3>La clé primaire (PK)</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Deux livres peuvent avoir le même titre, le même auteur, la même année. Pour ne jamais les confondre, on leur donne un <strong>numéro unique</strong>, comme un numéro de carte d'identité. Ce numéro, c'est la <strong>clé primaire</strong>.</p>
+    </div>
+    <p><strong>Définition.</strong> La <strong>clé primaire</strong> (PK, «&nbsp;Primary Key&nbsp;», c'est-à-dire «&nbsp;clé primaire&nbsp;») est la colonne qui identifie chaque ligne de façon <em>unique</em>. Ici&nbsp;: <code>id_livre</code>.</p>
+    <div class="box warn">
+      <span class="lbl">⚠️ Le piège</span>
+      <p>Deux lignes ne peuvent <strong>jamais</strong> partager la même clé primaire, et elle ne peut jamais être vide. C'est la règle qui garantit qu'on parle bien du <em>bon</em> livre. Si le numéro pouvait se répéter, on retomberait dans le chaos des fiches cartonnées.</p>
+    </div>
+
+    <h3>La clé étrangère (FK)</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Sur une fiche «&nbsp;emprunt&nbsp;», au lieu de recopier tout le dossier de l'adhérent, on écrit juste&nbsp;: «&nbsp;<em>voir l'adhérent n°&nbsp;42</em>&nbsp;». Ce <strong>renvoi</strong> vers une autre fiche, c'est la <strong>clé étrangère</strong>.</p>
+    </div>
+    <p><strong>Définition.</strong> La <strong>clé étrangère</strong> (FK, «&nbsp;Foreign Key&nbsp;», c'est-à-dire «&nbsp;clé étrangère&nbsp;») est une colonne qui <em>pointe vers la clé primaire d'une autre table</em>. Exemple&nbsp;: dans la table <code>emprunts</code>, la colonne <code>id_adherent</code> renvoie vers la table <code>adherents</code>.</p>
+    <div class="box tip">
+      <span class="lbl">💡 L'idée clé</span>
+      <p>La clé étrangère, c'est le <strong>lien</strong> entre deux tables. C'est ce qui rend une base «&nbsp;relationnelle&nbsp;»&nbsp;: les tables ne vivent pas isolées, elles se référencent entre elles au lieu de recopier les mêmes informations partout.</p>
+    </div>
+
+    <h2 id="s3">Le pont avec la POO Java</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>C'est le <strong>même objet vu dans deux langues</strong>. En Java, vous décrivez une <code>class Livre</code> puis vous fabriquez des livres avec <code>new</code>. En base de données, vous décrivez une <strong>table</strong> <code>livres</code> puis vous ajoutez des lignes. Même idée, autre vocabulaire.</p>
+    </div>
+
+    <div class="box recall">
+      <span class="lbl">📝 Rappel POO (vu juste avant)</span>
+      <p>Une <strong>classe</strong> est un moule qui décrit des attributs. Un <strong>objet</strong> est un exemplaire concret créé à partir du moule. Gardez ces deux mots en tête&nbsp;: ils ont un jumeau côté base de données.</p>
+    </div>
+
+    <p><strong>La correspondance à retenir&nbsp;:</strong></p>
+    <table>
+      <thead><tr><th>En POO Java</th><th>En base de données</th><th>Rôle commun</th></tr></thead>
+      <tbody>
+        <tr><td>Une <strong>classe</strong> <code>Livre</code></td><td>Une <strong>table</strong> <code>livres</code></td><td>Le moule&nbsp;: décrit la structure</td></tr>
+        <tr><td>Un <strong>objet</strong> (<code>new Livre(...)</code>)</td><td>Une <strong>ligne</strong> (enregistrement)</td><td>Un exemplaire concret</td></tr>
+        <tr><td>Un <strong>attribut</strong> (<code>String titre;</code>)</td><td>Une <strong>colonne</strong> (<code>titre</code>)</td><td>Une propriété</td></tr>
+        <tr><td>Le type Java (<code>int</code>, <code>String</code>…)</td><td>Le type SQL (<code>INT</code>, <code>VARCHAR</code>…)</td><td>La forme de la donnée</td></tr>
+        <tr><td>Créer&nbsp;: <code>new Livre(...)</code></td><td>Ajouter&nbsp;: <code>INSERT INTO livres …</code></td><td>Fabriquer un exemplaire</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Exemple côte à côte&nbsp;:</strong></p>
+    <pre class="java"><code><span class="com">// En Java : une classe décrit la structure</span>
+<span class="kw">class</span> <span class="fn">Livre</span> {
+    <span class="kw">int</span> id;
+    <span class="kw">String</span> titre;
+    <span class="kw">int</span> annee;
+}
+<span class="com">// On fabrique un exemplaire</span>
+Livre l = <span class="kw">new</span> <span class="fn">Livre</span>(<span class="num">1</span>, <span class="str">"Clean Code"</span>, <span class="num">2008</span>);</code></pre>
+
+    <pre><code><span class="com">-- En SQL : une table décrit la même structure</span>
+<span class="kw">CREATE TABLE</span> livres (
+    id_livre <span class="kw">INT</span>,
+    titre    <span class="kw">VARCHAR</span>(<span class="num">255</span>),
+    annee    <span class="kw">INT</span>
+);
+<span class="com">-- On ajoute un exemplaire (= une ligne)</span>
+<span class="kw">INSERT INTO</span> livres <span class="kw">VALUES</span> (<span class="num">1</span>, <span class="str">'Clean Code'</span>, <span class="num">2008</span>);</code></pre>
+
+    <p><strong>Analysons ces deux blocs.</strong> À gauche, <code>class Livre</code> déclare trois attributs typés&nbsp;; à droite, <code>CREATE TABLE livres</code> déclare trois colonnes typées&nbsp;: c'est le même moule. En bas, <code>new Livre(...)</code> et <code>INSERT INTO ... VALUES(...)</code> font la même chose&nbsp;: créer un exemplaire concret avec des valeurs réelles.</p>
+
+    <div class="box warn">
+      <span class="lbl">⚠️ Là où l'analogie s'arrête</span>
+      <p>Une table n'a <strong>pas de méthodes</strong> (pas de comportement, seulement des données). Et surtout&nbsp;: en Java, un objet <code>Emprunt</code> pointerait directement vers un objet <code>Adherent</code> en mémoire. En base, ce lien passe par une <strong>clé étrangère</strong> (un simple numéro dans une colonne), pas par une référence d'objet. On garde l'analogie pour comprendre, pas pour tout calquer.</p>
+    </div>
+
+    <h2 id="s4">La méthode Merise&nbsp;: penser avant de coder</h2>
+
+    <h3>Merise, c'est quoi&nbsp;?</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>On ne construit pas une maison en posant des briques au hasard. On commence par un <strong>plan d'architecte</strong>&nbsp;: où vont les murs, les portes, les pièces. Merise, c'est le plan d'architecte de votre base de données. On dessine <em>avant</em> de bâtir.</p>
+    </div>
+    <p><strong>Définition.</strong> <strong>Merise</strong> est une méthode française de conception de bases de données, née dans les années 1970. Son principe&nbsp;: séparer clairement <em>les données</em> (ce qu'on stocke) des <em>traitements</em> (ce qu'on en fait), et modéliser du plus abstrait au plus concret.</p>
+
+    <div class="box tip">
+      <span class="lbl">💡 Pourquoi dessiner d'abord</span>
+      <p>Dans les ESN (Capgemini, Sopra Steria…), le plan est <strong>exigé et validé par le client avant tout code</strong>. Il vit ensuite 10 à 20 ans. Une banque a même migré d'Oracle vers PostgreSQL en régénérant sa base à partir de ce plan — 6 mois de travail économisés. Le plan survit à la technologie.</p>
+    </div>
+
+    <h3>Les trois niveaux&nbsp;: MCD → MLD → MPD</h3>
+    <p>Merise descend en trois marches, du «&nbsp;quoi&nbsp;» vers le «&nbsp;comment&nbsp;»&nbsp;:</p>
+    <table>
+      <thead><tr><th>Niveau</th><th>Modèle</th><th>Question</th><th>À quoi ça ressemble</th></tr></thead>
+      <tbody>
+        <tr><td>Conceptuel</td><td><strong>MCD</strong> — Modèle Conceptuel de Données</td><td>«&nbsp;QUOI stocker&nbsp;?&nbsp;»</td><td>Un schéma métier, sans aucune technique</td></tr>
+        <tr><td>Logique</td><td><strong>MLD</strong> — Modèle Logique de Données</td><td>«&nbsp;COMMENT l'organiser en tables&nbsp;?&nbsp;»</td><td>La liste des tables, clés primaires et étrangères</td></tr>
+        <tr><td>Physique</td><td><strong>MPD</strong> — Modèle Physique de Données</td><td>«&nbsp;COMMENT l'implémenter&nbsp;?&nbsp;»</td><td>Le script <code>CREATE TABLE</code> pour MySQL</td></tr>
+      </tbody>
+    </table>
+    <div class="box key">
+      <span class="lbl">🎯 À retenir</span>
+      <p><strong>MCD = le plan</strong> (indépendant de toute techno) → <strong>MLD = les tables</strong> (encore sur papier) → <strong>MPD = le SQL réel</strong>. Aujourd'hui on se concentre sur les deux premières marches&nbsp;: le MCD, puis sa traduction en MLD.</p>
+    </div>
+
+    <h2 id="s5">Le MCD en détail</h2>
+    <p>Le MCD se dessine avec quatre briques&nbsp;: <strong>entités</strong>, <strong>attributs</strong>, <strong>identifiants</strong>, <strong>associations</strong>.</p>
+
+    <h3>L'entité</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Une entité, c'est le <strong>moule</strong> — exactement comme une classe Java. «&nbsp;CLIENT&nbsp;» est un moule&nbsp;: tous les clients auront un nom, un prénom, un email. On ne dessine pas chaque client, on dessine le moule.</p>
+    </div>
+    <p><strong>Définition.</strong> Une <strong>entité</strong> est un objet du monde réel qu'on veut modéliser. On la dessine dans un <strong>rectangle</strong> et on la nomme en MAJUSCULES&nbsp;: <code>CLIENT</code>, <code>PRODUIT</code>, <code>COMMANDE</code>, <code>LIVRE</code>, <code>ADHERENT</code>.</p>
+
+    <h3>L'attribut</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Les attributs, ce sont les <strong>rubriques à remplir</strong> sur la fiche du moule. Pour CLIENT&nbsp;: nom, prénom, email, adresse.</p>
+    </div>
+    <p><strong>Définition.</strong> Un <strong>attribut</strong> est une propriété qui caractérise une entité. On les liste à l'intérieur du rectangle. Ce sont les futures <em>colonnes</em>.</p>
+
+    <h3>L'identifiant</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Parmi les rubriques, une seule sert de <strong>numéro unique</strong> (comme la carte d'identité de la section 2). Dans un MCD, on la <u>souligne</u>.</p>
+    </div>
+    <p><strong>Définition.</strong> L'<strong>identifiant</strong> est l'attribut souligné qui distingue chaque occurrence de façon unique&nbsp;: <code><u>id_client</u></code>, <code><u>id_produit</u></code>. Lors du passage au MLD, <strong>l'identifiant deviendra la clé primaire</strong>.</p>
+    <div class="box warn">
+      <span class="lbl">⚠️ Le piège de l'identifiant «&nbsp;naturel&nbsp;»</span>
+      <p>Tentant d'utiliser l'ISBN comme identifiant d'un LIVRE. Mais un ISBN peut être mal saisi, changer d'édition, ou manquer sur un vieux livre. On préfère souvent un <code>id_livre</code> <strong>artificiel</strong> (un numéro généré automatiquement) et on garde l'ISBN comme simple attribut. Règle générale&nbsp;: un identifiant doit être unique, stable et jamais vide.</p>
+    </div>
+
+    <h3>L'association</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Deux moules, ça ne suffit pas&nbsp;: il faut dire <strong>comment ils se parlent</strong>. Un CLIENT <em>PASSE</em> une COMMANDE. Ce verbe qui relie deux entités, c'est l'<strong>association</strong>. On la dessine dans un <strong>ovale</strong> et on la nomme… par un verbe.</p>
+    </div>
+    <p><strong>Définition.</strong> Une <strong>association</strong> est un lien logique entre deux entités (ou plus), nommé par un verbe&nbsp;: <code>PASSER</code>, <code>CONTENIR</code>, <code>EMPRUNTER</code>, <code>ECRIRE</code>.</p>
+
+    <p><strong>Exemple concret — une mini-boutique en ligne&nbsp;:</strong> un client passe des commandes, une commande contient des produits.</p>
+
+    <figure>
+      <svg viewBox="0 0 700 300" role="img" aria-label="MCD e-commerce : CLIENT, PASSER, COMMANDE, CONTENIR, PRODUIT">
+        <style>
+          .ent{fill:#eef1fa;stroke:#263a63;stroke-width:1.5;}
+          .enth{fill:#263a63;}
+          .entt{fill:#fff;font:600 12px 'Inter',sans-serif;}
+          .attr{fill:#263a63;font:11px 'Inter',sans-serif;}
+          .assoc{fill:#f6efdc;stroke:#b0812a;stroke-width:1.5;}
+          .assoct{fill:#6b4d12;font:600 11px 'Inter',sans-serif;}
+          .card{fill:#7a5410;font:italic 11px 'Inter',sans-serif;}
+          .lnk{stroke:#356aa8;stroke-width:1.6;}
+        </style>
+        <rect class="ent" x="10" y="30" width="150" height="86" rx="4"/>
+        <rect class="enth" x="10" y="30" width="150" height="22" rx="4"/>
+        <text class="entt" x="85" y="45" text-anchor="middle">CLIENT</text>
+        <text class="attr" x="20" y="68"><tspan text-decoration="underline">id_client</tspan></text>
+        <text class="attr" x="20" y="84">nom, prenom</text>
+        <text class="attr" x="20" y="100">email, adresse</text>
+
+        <ellipse class="assoc" cx="270" cy="73" rx="46" ry="26"/>
+        <text class="assoct" x="270" y="77" text-anchor="middle">PASSER</text>
+        <line class="lnk" x1="160" y1="73" x2="224" y2="73"/>
+        <text class="card" x="165" y="66">0,n</text>
+        <line class="lnk" x1="316" y1="73" x2="380" y2="73"/>
+        <text class="card" x="352" y="66">1,1</text>
+
+        <rect class="ent" x="380" y="30" width="160" height="86" rx="4"/>
+        <rect class="enth" x="380" y="30" width="160" height="22" rx="4"/>
+        <text class="entt" x="460" y="45" text-anchor="middle">COMMANDE</text>
+        <text class="attr" x="390" y="68"><tspan text-decoration="underline">id_commande</tspan></text>
+        <text class="attr" x="390" y="84">date_commande</text>
+        <text class="attr" x="390" y="100">statut</text>
+
+        <line class="lnk" x1="460" y1="116" x2="460" y2="158"/>
+        <text class="card" x="466" y="140">1,n</text>
+        <ellipse class="assoc" cx="460" cy="185" rx="52" ry="26"/>
+        <text class="assoct" x="460" y="182" text-anchor="middle">CONTENIR</text>
+        <text x="460" y="197" text-anchor="middle" style="fill:#6b4d12;font:italic 10px sans-serif">(quantite)</text>
+        <line class="lnk" x1="460" y1="211" x2="460" y2="248"/>
+        <text class="card" x="466" y="232">0,n</text>
+
+        <rect class="ent" x="370" y="248" width="180" height="44" rx="4"/>
+        <rect class="enth" x="370" y="248" width="180" height="22" rx="4"/>
+        <text class="entt" x="460" y="263" text-anchor="middle">PRODUIT</text>
+        <text class="attr" x="380" y="286"><tspan text-decoration="underline">id_produit</tspan>, nom, prix</text>
+      </svg>
+      <figcaption>MCD — rectangles = entités · ovales = associations · (min,max) = cardinalités</figcaption>
+    </figure>
+
+    <div class="box tip">
+      <span class="lbl">💡 L'attribut porté par l'association</span>
+      <p>Regardez <code>quantite</code> sur l'association <strong>CONTENIR</strong>. Pourquoi n'est-il ni dans COMMANDE ni dans PRODUIT&nbsp;? Parce qu'il dépend des <em>deux à la fois</em>&nbsp;: c'est la quantité <em>de ce produit</em> <em>dans cette commande</em>. Un attribut qui ne peut vivre dans aucune des deux entités appartient à l'association qui les relie.</p>
+    </div>
+
+    <h2 id="s6">Les cardinalités&nbsp;: «&nbsp;combien de fois&nbsp;?&nbsp;»</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Un professeur suit <em>plusieurs</em> élèves, mais chaque élève n'a qu'<em>un</em> professeur principal. La cardinalité, c'est cette <strong>règle du «&nbsp;combien&nbsp;»</strong> qu'on note sur chaque bout de l'association, sous forme d'un couple <strong>(minimum, maximum)</strong>.</p>
+    </div>
+    <p><strong>Définition.</strong> Une <strong>cardinalité</strong> indique combien de fois <em>au minimum</em> et <em>au maximum</em> une occurrence d'entité participe à l'association. Les quatre couples usuels&nbsp;:</p>
+    <table>
+      <thead><tr><th>Cardinalité</th><th>Se lit</th><th>Exemple</th></tr></thead>
+      <tbody>
+        <tr><td><code>(0,1)</code></td><td>zéro ou un (optionnel, unique)</td><td>Un employé a zéro ou un bureau attitré</td></tr>
+        <tr><td><code>(1,1)</code></td><td>exactement un (obligatoire, unique)</td><td>Une commande appartient à exactement un client</td></tr>
+        <tr><td><code>(0,n)</code></td><td>zéro ou plusieurs (optionnel, multiple)</td><td>Un client peut passer zéro ou plusieurs commandes</td></tr>
+        <tr><td><code>(1,n)</code></td><td>un ou plusieurs (obligatoire, multiple)</td><td>Une commande contient au moins un produit</td></tr>
+      </tbody>
+    </table>
+
+    <div class="box key">
+      <span class="lbl">🎯 Comment les lire</span>
+      <p>On lit toujours <strong>du point de vue de l'entité</strong>&nbsp;:</p>
+      <p>«&nbsp;Un CLIENT peut PASSER combien de COMMANDES&nbsp;?&nbsp;» → de 0 à plusieurs → <code>(0,n)</code> côté CLIENT.<br>
+      «&nbsp;Une COMMANDE est PASSÉE par combien de CLIENTS&nbsp;?&nbsp;» → exactement 1 → <code>(1,1)</code> côté COMMANDE.</p>
+    </div>
+
+    <div class="box warn">
+      <span class="lbl">⚠️ L'erreur qui coûte cher</span>
+      <p>Une startup e-commerce avait modélisé «&nbsp;une commande a UN seul produit&nbsp;» — <code>(1,1)</code>. Six mois plus tard, pour permettre plusieurs produits par commande, il a fallu <strong>refactoriser toute la base</strong>&nbsp;: 3 semaines de dev + migration des données. Prendre 5 minutes pour poser la bonne cardinalité au départ évite des semaines de galère ensuite.</p>
+    </div>
+
+    <div class="box tip">
+      <span class="lbl">💡 Le réflexe</span>
+      <p>Interrogez <strong>chaque côté séparément</strong>, à voix haute, avec un vrai exemple. Le minimum répond à «&nbsp;est-ce obligatoire&nbsp;?&nbsp;» (0 = non, 1 = oui). Le maximum répond à «&nbsp;peut-il y en avoir plusieurs&nbsp;?&nbsp;» (1 = non, n = oui).</p>
+    </div>
+
+    <h2 id="s7">Du MCD au MLD&nbsp;: vers les tables réelles</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Le plan d'architecte (MCD) est validé. On passe au <strong>gros œuvre</strong>&nbsp;: on transforme les pièces dessinées en vrais murs. Le MLD, ce sont les tables concrètes avec leurs clés primaires et étrangères. Trois règles suffisent.</p>
+    </div>
+
+    <h3>Règle 1 — Chaque entité devient une table</h3>
+    <p>L'entité devient une table&nbsp;; son identifiant souligné devient la <strong>clé primaire</strong>. <code>CLIENT</code> → table <code>CLIENT (<u>id_client</u>, nom, prenom, email, adresse)</code>.</p>
+
+    <h3>Règle 2 — Une association (1,1)↔(0,n)&nbsp;: la clé migre</h3>
+    <p>Quand un côté est <code>(1,1)</code>, la clé primaire de l'autre côté <strong>descend comme clé étrangère</strong> dans la table du côté <code>(1,1)</code>. Ici <code>COMMANDE</code> (côté 1,1) hérite de <code>id_client</code>.</p>
+    <div class="box tip">
+      <span class="lbl">💡 Le sens de la migration</span>
+      <p>La clé va toujours <strong>vers le côté «&nbsp;exactement un&nbsp;»</strong>. Logique&nbsp;: chaque commande n'ayant qu'UN client, on peut ranger ce client directement sur la fiche commande. L'inverse serait impossible&nbsp;: un client a plusieurs commandes, on ne saurait pas laquelle inscrire.</p>
+    </div>
+
+    <h3>Règle 3 — Une association (n,n)&nbsp;: on crée une table associative</h3>
+    <p>Quand les deux côtés sont multiples (par ex. <code>(1,n)</code> ↔ <code>(0,n)</code>), <strong>l'association devient elle-même une table</strong>. Elle contient les clés des deux entités + les attributs de l'association. <code>CONTENIR</code> devient <code>LIGNE_COMMANDE</code>.</p>
+
+    <p><strong>Le MLD complet de notre exemple&nbsp;:</strong></p>
+    <pre><code><span class="com">-- # signale une clé étrangère (FK)</span>
+CLIENT (<span class="kw">id_client</span>, nom, prenom, email, adresse)
+    <span class="com">PK : id_client</span>
+
+COMMANDE (<span class="kw">id_commande</span>, date_commande, statut, <span class="num">#id_client</span>)
+    <span class="com">PK : id_commande</span>
+    <span class="com">FK : id_client → CLIENT(id_client)</span>
+
+PRODUIT (<span class="kw">id_produit</span>, nom, description, prix)
+    <span class="com">PK : id_produit</span>
+
+LIGNE_COMMANDE (<span class="kw">#id_commande</span>, <span class="kw">#id_produit</span>, quantite)
+    <span class="com">PK : (id_commande, id_produit)   -- clé composite</span>
+    <span class="com">FK : id_commande → COMMANDE(id_commande)</span>
+    <span class="com">FK : id_produit  → PRODUIT(id_produit)</span></code></pre>
+
+    <p><strong>Analysons ce MLD ligne par ligne&nbsp;:</strong></p>
+    <ul class="clean">
+      <li><code>CLIENT</code> et <code>PRODUIT</code> sont des entités simples&nbsp;: une table, une clé primaire, rien de plus (Règle&nbsp;1).</li>
+      <li><code>COMMANDE</code> porte <code>#id_client</code>&nbsp;: la clé étrangère qui a migré du côté <code>(1,1)</code> (Règle&nbsp;2). Le <code>#</code> est la convention Merise pour «&nbsp;clé étrangère&nbsp;».</li>
+      <li><code>LIGNE_COMMANDE</code> est née de l'association <code>CONTENIR</code> (Règle&nbsp;3). Elle réunit les deux clés étrangères <strong>plus</strong> l'attribut <code>quantite</code> qui appartenait à l'association.</li>
+      <li>Sa clé primaire est <strong>composite</strong> — formée de deux colonnes <code>(id_commande, id_produit)</code> — car c'est le <em>couple</em> qui est unique&nbsp;: un même produit peut apparaître dans plusieurs commandes, et une commande contient plusieurs produits, mais un produit donné n'apparaît qu'une fois dans une commande donnée.</li>
+    </ul>
+
+    <p><strong>Correspondance MCD ↔ MLD à mémoriser&nbsp;:</strong></p>
+    <table>
+      <thead><tr><th>Dans le MCD (le plan)</th><th>Devient dans le MLD (les tables)</th></tr></thead>
+      <tbody>
+        <tr><td>Entité (rectangle)</td><td>Table</td></tr>
+        <tr><td>Attribut</td><td>Colonne</td></tr>
+        <tr><td>Identifiant souligné</td><td>Clé primaire (PK)</td></tr>
+        <tr><td>Association côté <code>(1,1)</code></td><td>Clé étrangère qui migre (Règle 2)</td></tr>
+        <tr><td>Association <code>(n,n)</code></td><td>Table associative (Règle 3)</td></tr>
+        <tr><td>Attribut d'association</td><td>Colonne de la table associative</td></tr>
+      </tbody>
+    </table>
+
+    <div class="box warn">
+      <span class="lbl">⚠️ Ne confondez pas les niveaux</span>
+      <p>Dans le <strong>MCD</strong> on parle d'<em>entités</em> et d'<em>associations</em>&nbsp;; dans le <strong>MLD</strong> on parle de <em>tables</em>, de <em>clés primaires</em> et de <em>clés étrangères</em>. Employer «&nbsp;table&nbsp;» dans un MCD ou «&nbsp;association&nbsp;» dans un MLD est l'erreur de vocabulaire la plus fréquente en évaluation.</p>
+    </div>
+
+    <h2 id="s8">Ce qu'il faut retenir</h2>
+    <table class="recap">
+      <thead><tr><th>Notion</th><th>En une phrase</th><th>Métaphore</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Base de données</strong></td><td>Données organisées, stockées durablement, retrouvées vite et fiablement.</td><td>Le tiroir de fiches bien rangé</td></tr>
+        <tr><td><strong>SGBD</strong></td><td>Le logiciel qui gère la base (MySQL…) via le langage SQL.</td><td>Le magasinier</td></tr>
+        <tr><td><strong>Table / ligne / colonne</strong></td><td>Un tiroir de fiches identiques / une fiche / une rubrique.</td><td>Le tiroir de fiches</td></tr>
+        <tr><td><strong>Clé primaire (PK)</strong></td><td>Le numéro unique de chaque ligne, jamais vide, jamais en double.</td><td>La carte d'identité</td></tr>
+        <tr><td><strong>Clé étrangère (FK)</strong></td><td>Une colonne qui pointe vers la PK d'une autre table.</td><td>Le renvoi «&nbsp;voir n°…&nbsp;»</td></tr>
+        <tr><td><strong>Merise</strong></td><td>Méthode pour dessiner la base avant de coder, en 3 niveaux.</td><td>Le plan d'architecte</td></tr>
+        <tr><td><strong>MCD → MLD → MPD</strong></td><td>Quoi stocker → comment l'organiser en tables → script SQL.</td><td>Plan → gros œuvre → maison</td></tr>
+        <tr><td><strong>Entité / attribut / identifiant</strong></td><td>Le moule (rectangle) / ses propriétés / la propriété soulignée = future PK.</td><td>Le moule et ses rubriques</td></tr>
+        <tr><td><strong>Association</strong></td><td>Le verbe (ovale) qui relie deux entités&nbsp;; peut porter un attribut.</td><td>Le verbe qui relie</td></tr>
+        <tr><td><strong>Cardinalité (min,max)</strong></td><td>Combien de fois une occurrence participe à l'association.</td><td>La règle du «&nbsp;combien&nbsp;»</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="s9">🎯 Réflexes à garder</h2>
+    <div class="box key">
+      <span class="lbl">🎯 Les 6 pièges à ne pas oublier</span>
+      <ol class="clean" style="margin:.3em 0 0">
+        <li>Une <strong>clé primaire</strong> est unique et jamais vide&nbsp;; deux lignes ne la partagent jamais.</li>
+        <li>Une <strong>clé étrangère</strong> pointe vers la PK d'<em>une autre</em> table&nbsp;: c'est le lien qui rend la base «&nbsp;relationnelle&nbsp;».</li>
+        <li>Un <strong>attribut d'association</strong> (comme <code>quantite</code>) ne peut aller dans aucune des deux entités.</li>
+        <li>Une <strong>cardinalité</strong> se lit du point de vue de l'entité&nbsp;: min = «&nbsp;obligatoire&nbsp;?&nbsp;», max = «&nbsp;plusieurs&nbsp;?&nbsp;».</li>
+        <li>La <strong>clé migre vers le côté <code>(1,1)</code></strong>&nbsp;; une association <strong><code>(n,n)</code> devient une table</strong> associative.</li>
+        <li>Bon <strong>vocabulaire par niveau</strong>&nbsp;: entités/associations au MCD, tables/PK/FK au MLD.</li>
+      </ol>
+    </div>
+
+    <p class="footer-note">
+      Prochaine étape (Jour 3)&nbsp;: on quitte le papier et on écrit le SQL réel — <code>CREATE TABLE</code>, types MySQL, insertion des données, premiers <code>SELECT</code>. Gardez votre MCD/MLD à portée de main.
+    </p>
+
+  </main>
+</div>
+</body>
+</html>
