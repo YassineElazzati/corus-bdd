@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1BDD3 — Exercice 2 : Modélisation « Notes des étudiants »</title>
+<style>
+  :root{
+    --ink:#1a2027; --ink-soft:#5b6670; --bg:#eceff1; --panel:#ffffff; --line:#d5dbdf;
+    --teal:#0f6f6a; --teal-2:#0b5a56; --teal-bg:#e3f1ef; --teal-line:#bfe0da;
+    --amber:#b45309; --amber-bg:#fbf1e2;
+    --green:#2f855a; --green-bg:#e7f3ec;
+    --indigo:#4759a8; --indigo-bg:#eceffa;
+    --console:#12232b; --console-2:#0c191f; --console-tx:#cfe9e3;
+    --rownum:#93a0a6;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;
+    background-color:var(--bg);
+    background-image:repeating-linear-gradient(rgba(15,111,106,.04) 0 1px, transparent 1px 30px);
+    -webkit-font-smoothing:antialiased;
+  }
+  main{max-width:840px;margin:0 auto;padding:34px 26px 90px;}
+
+  .console{border-radius:10px;overflow:hidden;border:1px solid var(--console-2);
+    box-shadow:0 10px 30px rgba(12,25,31,.18);margin-bottom:26px;}
+  .console-chrome{background:var(--console-2);padding:9px 14px;display:flex;align-items:center;gap:8px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .dot.r{background:#e0605a;} .dot.y{background:#e0b23c;} .dot.g{background:#5fb37a;}
+  .console-chrome .name{margin-left:8px;font-family:var(--mono);font-size:.74rem;color:#7f9aa1;letter-spacing:.03em;}
+  .console-body{background:var(--console);padding:16px 18px 18px;font-family:var(--mono);font-size:.86rem;line-height:1.55;color:var(--console-tx);}
+  .console-body .prompt{color:#59c2b4;}
+  .console-body .kw{color:#7ec8ff;} .console-body .str{color:#e2b06a;} .console-body .semi{color:#8fa6ac;}
+  .console-body .cursor{display:inline-block;width:8px;height:1.05em;background:#59c2b4;vertical-align:-2px;margin-left:2px;animation:blink 1.1s step-end infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .result-cap{background:#0a141a;color:#7f9aa1;font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:5px 18px;border-top:1px solid #0a141a;}
+
+  .rowcard{background:var(--panel);border:1px solid var(--line);border-top:none;padding:22px 24px 20px;}
+  .rowcard .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:9px;}
+  .rowcard h1{font-size:1.66rem;line-height:1.16;margin:0 0 8px;color:var(--ink);letter-spacing:-.015em;font-weight:800;}
+  .rowcard .sub{color:var(--ink-soft);font-size:1rem;margin:0;}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .facts span{font-family:var(--mono);font-size:.68rem;color:var(--teal-2);background:var(--teal-bg);border:1px solid var(--teal-line);padding:3px 9px;border-radius:20px;}
+
+  main{counter-reset:sec;}
+  h2{
+    counter-increment:sec;font-size:1.24rem;color:var(--ink);margin:40px 0 12px;font-weight:800;
+    letter-spacing:-.01em;display:flex;align-items:center;gap:12px;padding-bottom:8px;
+    border-bottom:2px solid var(--teal);
+  }
+  h2::before{content:counter(sec,decimal-leading-zero);font-family:var(--mono);font-size:.76rem;font-weight:700;
+    color:#fff;background:var(--teal);padding:3px 8px;border-radius:4px;flex:0 0 auto;}
+  p{margin:.6em 0;} strong{color:var(--ink);}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 22px 14px;box-shadow:0 1px 2px rgba(12,25,31,.05);}
+  .panel h3{font-family:var(--mono);font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);margin:16px 0 4px;display:flex;align-items:center;gap:7px;}
+  .panel h3::before{content:"▸";color:var(--teal);}
+  .panel ul{margin:4px 0 0;padding-left:20px;} .panel li{margin:5px 0;}
+
+  ol.q{list-style:none;counter-reset:q;margin:8px 0;padding:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel);}
+  ol.q > li{counter-increment:q;display:flex;gap:0;border-top:1px solid var(--line);}
+  ol.q > li:first-child{border-top:none;}
+  ol.q .rn{flex:0 0 46px;background:#f3f6f6;border-right:1px solid var(--line);color:var(--rownum);
+    font-family:var(--mono);font-size:.78rem;font-weight:700;text-align:center;padding:14px 0;}
+  ol.q .rn::before{content:counter(q);}
+  ol.q .qbody{flex:1 1 auto;padding:12px 16px;}
+  ol.q .qbody .hint{display:block;margin-top:5px;font-size:.85rem;color:var(--ink-soft);}
+  .pkchip{font-family:var(--mono);font-size:.72em;font-weight:700;color:#fff;background:var(--teal);padding:1px 5px;border-radius:3px;letter-spacing:.03em;vertical-align:1px;}
+
+  .box{border-radius:9px;padding:12px 15px;margin:15px 0;border-left:5px solid;font-size:.94rem;background:var(--panel);}
+  .box .lbl{font-weight:700;display:block;margin-bottom:3px;font-family:var(--mono);font-size:.8rem;}
+  .box.tip{background:var(--teal-bg);border-color:var(--teal);}   .box.tip .lbl{color:var(--teal-2);}
+  .box.warn{background:var(--amber-bg);border-color:var(--amber);} .box.warn .lbl{color:var(--amber);}
+  .box.key{background:var(--green-bg);border-color:var(--green);}  .box.key .lbl{color:var(--green);}
+  .box.meta{background:var(--indigo-bg);border-color:var(--indigo);} .box.meta .lbl{color:var(--indigo);}
+
+  code{font-family:var(--mono);font-size:.85em;background:#eaeeef;padding:.08em .38em;border-radius:4px;color:#294049;}
+  pre{background:var(--console);color:var(--console-tx);border-radius:9px;padding:0 0 16px;overflow:hidden;
+    font-family:var(--mono);font-size:.84rem;line-height:1.6;margin:14px 0;border:1px solid var(--console-2);}
+  pre::before{content:"résultat — mld";display:block;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;
+    color:#7f9aa1;background:var(--console-2);padding:6px 16px;}
+  pre code{background:none;padding:0 18px;color:inherit;font-size:1em;display:block;margin-top:14px;overflow-x:auto;}
+  pre .kw{color:#7ec8ff;} pre .com{color:#7f9aa1;font-style:italic;} pre .num{color:#e2b06a;}
+
+  .worksheet{border:1px dashed var(--teal);border-radius:9px;padding:14px 16px;margin:14px 0;background:rgba(227,241,239,.35);}
+  .worksheet .cap{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--teal-2);}
+  .lines{margin-top:8px;} .lines div{border-bottom:1px solid #c3d3cf;height:26px;}
+
+  details.solution{margin-top:14px;border:1px solid var(--teal);border-radius:10px;overflow:hidden;background:var(--panel);}
+  details.solution summary{cursor:pointer;list-style:none;padding:12px 18px;font-family:var(--mono);font-weight:700;
+    font-size:.83rem;letter-spacing:.03em;color:#fff;background:var(--teal);display:flex;align-items:center;gap:10px;}
+  details.solution summary::-webkit-details-marker{display:none;}
+  details.solution summary::before{content:"▶";font-size:.7rem;transition:transform .15s;}
+  details.solution[open] summary::before{transform:rotate(90deg);}
+  details.solution summary::after{content:"RUN";margin-left:auto;font-size:.66rem;opacity:.7;letter-spacing:.12em;}
+  details.solution .sol-body{padding:6px 20px 18px;}
+  details.solution h3{font-size:1rem;color:var(--teal-2);margin:16px 0 4px;font-family:var(--mono);}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;}
+  thead th{background:#20343b;color:#cfe0e3;font-family:var(--mono);font-size:.76rem;letter-spacing:.02em;}
+  tbody tr:nth-child(even){background:#f3f6f6;}
+
+  .footer-note{margin-top:32px;color:var(--ink-soft);font-size:.88rem;border-top:1px solid var(--line);padding-top:12px;font-family:var(--mono);}
+
+  @media (max-width:680px){
+    main{padding:20px 14px 70px;}
+    .rowcard h1{font-size:1.38rem;}
+    ol.q .rn{flex:0 0 36px;}
+    .console-body{font-size:.78rem;}
+  }
+  @media print{
+    body{background:#fff;} .console{box-shadow:none;} .worksheet{background:#fff;}
+    details.solution:not([open]){display:none;}
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="console">
+    <div class="console-chrome">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="name">bibliotech — client SQL</span>
+    </div>
+    <div class="console-body">
+      <span class="prompt">mysql&gt;</span> <span class="kw">SELECT</span> * <span class="kw">FROM</span> exercices<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">WHERE</span> module = <span class="str">'1BDD3'</span> <span class="kw">AND</span> jour = <span class="num">2</span> <span class="kw">AND</span> num = <span class="num">2</span><span class="semi">;</span><span class="cursor"></span>
+    </div>
+    <div class="result-cap">1 row in set (0.00 sec)</div>
+    <div class="rowcard">
+      <div class="eyebrow">Exercice 2 · Modélisation Merise · Entraînement</div>
+      <h1>Du cahier des charges au MLD&nbsp;: «&nbsp;Notes des étudiants&nbsp;»</h1>
+      <p class="sub">Même méthode que l'exercice précédent, nouveau contexte&nbsp;: on remet en jeu la migration de clé et la table associative, avec de nouveaux pièges.</p>
+      <div class="facts">
+        <span>⏱ 10–15 min</span><span>👤 solo / binôme</span><span>🖥 sur Looping</span><span>🎯 MCD → MLD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="box tip">
+    <span class="lbl">💡 Avant de commencer</span>
+    <p>Mêmes outils que l'exercice&nbsp;1&nbsp;: entité, attribut, identifiant, association (verbe), cardinalité <code>(min,max)</code>, et les 3 règles de transformation. Traitez les questions <strong>dans l'ordre</strong>.</p>
+  </div>
+
+  <div class="box meta">
+    <span class="lbl">🖥 On travaille dans Looping</span>
+    <p>Vous <strong>dessinez le MCD dans Looping</strong>, puis vous <strong>générez le MLD</strong>. L'objectif reste le même&nbsp;: <em>prédire</em> le MLD avec les Règles 1-2-3, puis <em>vérifier</em> avec la génération. Un écart = presque toujours une cardinalité à revoir.</p>
+  </div>
+
+  <h2>Le cahier des charges</h2>
+  <div class="panel">
+    <p>Un établissement veut informatiser le <strong>suivi des notes</strong> de ses étudiants.</p>
+
+    <h3>Étudiants</h3>
+    <ul>
+      <li>On stocke leur <strong>nom</strong>, leur <strong>prénom</strong> et leur <strong>date de naissance</strong>.</li>
+      <li>Chaque étudiant appartient à <strong>un seul</strong> groupe.</li>
+    </ul>
+
+    <h3>Groupes</h3>
+    <ul>
+      <li>On stocke le <strong>nom du groupe</strong> et l'<strong>année</strong>.</li>
+      <li>Un groupe compte <strong>plusieurs</strong> étudiants.</li>
+    </ul>
+
+    <h3>Matières</h3>
+    <ul>
+      <li>On stocke l'<strong>intitulé</strong> et le <strong>coefficient</strong>.</li>
+      <li>Un étudiant suit <strong>plusieurs</strong> matières&nbsp;; une matière est suivie par <strong>plusieurs</strong> étudiants.</li>
+      <li>Pour chaque matière suivie par un étudiant, on enregistre sa <strong>note</strong>.</li>
+    </ul>
+  </div>
+
+  <h2>Vos questions</h2>
+  <ol class="q">
+    <li><span class="rn"></span><div class="qbody">
+      Dans <strong>Looping</strong>, créez les <strong>3 entités</strong>&nbsp;: saisissez leurs <strong>attributs</strong> et désignez l'<strong>identifiant</strong> de chacune.
+      <span class="hint">Piège&nbsp;: peut-on identifier un étudiant par son nom&nbsp;? par sa date de naissance&nbsp;?</span>
+    </div></li>
+    <li><span class="rn"></span><div class="qbody">
+      Reliez les entités par <strong>2 associations</strong> (un verbe chacune), saisissez les <strong>cardinalités des deux côtés</strong>, et placez <strong>l'attribut d'association</strong> au bon endroit.
+      <span class="hint">La <code>note</code>&nbsp;: elle appartient à ÉTUDIANT&nbsp;? à MATIÈRE&nbsp;? ou à leur lien&nbsp;?</span>
+    </div></li>
+    <li><span class="rn"></span><div class="qbody">
+      <strong>Générez le MLD</strong> avec Looping, puis <strong>vérifiez</strong> qu'il correspond à votre prédiction (tables, PK, FK, table associative). Notez les écarts éventuels.
+      <span class="hint">Rappel&nbsp;: entité → table · côté <code>(1,1)</code> → la clé migre · <code>(n,n)</code> → table associative.</span>
+    </div></li>
+  </ol>
+
+  <div class="worksheet">
+    <span class="cap">Zone de brouillon (version imprimée)</span>
+    <div class="lines"><div></div><div></div><div></div><div></div><div></div><div></div></div>
+  </div>
+
+  <h2>Vérifier</h2>
+  <details class="solution">
+    <summary>Exécuter — afficher le corrigé</summary>
+    <div class="sol-body">
+
+      <h3>Q1 — Entités, attributs, identifiants</h3>
+      <table>
+        <thead><tr><th>Entité</th><th>Identifiant</th><th>Autres attributs</th></tr></thead>
+        <tbody>
+          <tr><td>ETUDIANT</td><td><span class="pkchip">PK</span> <u>id_etudiant</u></td><td>nom, prenom, date_naissance</td></tr>
+          <tr><td>GROUPE</td><td><span class="pkchip">PK</span> <u>id_groupe</u></td><td>nom_groupe, annee</td></tr>
+          <tr><td>MATIERE</td><td><span class="pkchip">PK</span> <u>id_matiere</u></td><td>intitule, coefficient</td></tr>
+        </tbody>
+      </table>
+      <div class="box warn">
+        <span class="lbl">⚠️ Le piège de la Q1</span>
+        <p>Ni le <code>nom</code> (deux étudiants peuvent s'appeler pareil) ni la <code>date_naissance</code> (deux étudiants peuvent être nés le même jour) ne garantissent l'unicité. On crée un identifiant artificiel <code>id_etudiant</code>, unique et stable.</p>
+      </div>
+
+      <h3>Q2 — Associations et cardinalités</h3>
+      <table>
+        <thead><tr><th>Association</th><th>Entités &amp; cardinalités</th><th>Attribut</th></tr></thead>
+        <tbody>
+          <tr><td><strong>APPARTENIR</strong></td><td>ETUDIANT <code>(1,1)</code> — <code>(1,n)</code> GROUPE</td><td>aucun</td></tr>
+          <tr><td><strong>SUIVRE</strong></td><td>ETUDIANT <code>(1,n)</code> — <code>(0,n)</code> MATIERE</td><td><code>note</code></td></tr>
+        </tbody>
+      </table>
+      <div class="box key">
+        <span class="lbl">🎯 Le point clé de la Q2</span>
+        <p>La <code>note</code> dépend <em>à la fois</em> de l'étudiant ET de la matière (la note <em>de cet étudiant</em> <em>dans cette matière</em>). Elle ne peut vivre ni dans ETUDIANT ni dans MATIERE&nbsp;: c'est un <strong>attribut d'association</strong>, porté par SUIVRE.</p>
+      </div>
+
+      <h3>Q3 — Le MLD généré</h3>
+      <p style="margin:.2em 0 0;font-size:.92rem;color:var(--ink-soft)">Voici ce que la génération de Looping doit produire (à la notation près)&nbsp;:</p>
+      <pre><code><span class="com">-- # = clé étrangère (FK)</span>
+GROUPE (<span class="kw">id_groupe</span>, nom_groupe, annee)
+    <span class="com">PK : id_groupe</span>
+
+ETUDIANT (<span class="kw">id_etudiant</span>, nom, prenom, date_naissance, <span class="num">#id_groupe</span>)
+    <span class="com">PK : id_etudiant</span>
+    <span class="com">FK : id_groupe → GROUPE(id_groupe)   -- Règle 2</span>
+
+MATIERE (<span class="kw">id_matiere</span>, intitule, coefficient)
+    <span class="com">PK : id_matiere</span>
+
+SUIVRE (<span class="kw">#id_etudiant</span>, <span class="kw">#id_matiere</span>, note)
+    <span class="com">PK : (id_etudiant, id_matiere)   -- clé composite, Règle 3</span>
+    <span class="com">FK : id_etudiant → ETUDIANT(id_etudiant)</span>
+    <span class="com">FK : id_matiere  → MATIERE(id_matiere)</span></code></pre>
+      <div class="box tip">
+        <span class="lbl">💡 Les deux règles à retrouver</span>
+        <p>L'association <strong>APPARTENIR</strong> a un côté <code>(1,1)</code> (côté ETUDIANT)&nbsp;: la clé <code>id_groupe</code> <strong>migre</strong> dans ETUDIANT (Règle 2). L'association <strong>SUIVRE</strong> est <code>(n,n)</code>&nbsp;: elle devient une <strong>table</strong> réunissant les deux clés + <code>note</code> (Règle 3).</p>
+      </div>
+
+      <h3>Pour aller plus loin (à débattre)</h3>
+      <div class="box meta">
+        <span class="lbl">🪄 Deux questions ouvertes</span>
+        <p><strong>1.</strong> Côté GROUPE, <code>(1,n)</code> ou <code>(0,n)</code>&nbsp;? Autrement dit&nbsp;: <em>peut-il exister un groupe sans aucun étudiant&nbsp;?</em> (un groupe tout juste créé, par exemple).</p>
+        <p><strong>2.</strong> Ici on suppose <strong>une seule note par matière</strong>. En réalité il y a souvent plusieurs évaluations&nbsp;: dans ce cas, <code>note</code> ne suffit plus, et il faudrait une entité <strong>ÉVALUATION</strong> (date, note) reliée à SUIVRE. C'est un excellent réflexe&nbsp;: dès qu'un «&nbsp;fait&nbsp;» se répète dans le temps, il mérite souvent sa propre entité.</p>
+      </div>
+
+    </div>
+  </details>
+
+  <p class="footer-note">
+    -- next: Jour 3 &gt; traduire ces MLD en SQL réel (CREATE TABLE, types MySQL, PRIMARY/FOREIGN KEY, INSERT, SELECT)
+  </p>
+
+</main>
+</body>
+</html>
