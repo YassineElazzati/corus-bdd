@@ -122,7 +122,7 @@
 
   <nav class="toc" aria-label="Sommaire">
     <p class="toc-title">Schéma du cours</p>
-    <p class="toc-note">6 sections · \c bibliotheque</p>
+    <p class="toc-note">8 sections · \c bibliotheque</p>
     <ol>
       <li><a href="#s1">Le schéma de la base</a></li>
       <li><a href="#s2">Installer Docker (WSL2)</a></li>
@@ -130,6 +130,8 @@
       <li><a href="#s4">Se connecter avec DBeaver</a></li>
       <li><a href="#s5">Peupler la base (le mock)</a></li>
       <li><a href="#s6">Les commandes SQL de base</a></li>
+      <li><a href="#s7">Ce qu'il faut retenir</a></li>
+      <li><a href="#s8">Réflexes SQL</a></li>
     </ol>
   </nav>
 
@@ -161,6 +163,8 @@
         <li><a href="#s4">Se connecter avec DBeaver</a></li>
         <li><a href="#s5">Peupler la base (le mock)</a></li>
         <li><a href="#s6">Les commandes SQL de base</a></li>
+        <li><a href="#s7">Ce qu'il faut retenir</a></li>
+        <li><a href="#s8">Réflexes SQL</a></li>
       </ol>
     </details>
 
@@ -326,6 +330,7 @@ docker run hello-world   <span class="com"># test : télécharge et lance un min
   <span class="kw">bibliotheque-db</span>:
     <span class="kw">image</span>: postgres:<span class="num">16</span>
     <span class="kw">container_name</span>: bibliotheque
+    <span class="kw">restart</span>: unless-stopped   <span class="com"># redemarre le conteneur avec Docker</span>
     <span class="kw">environment</span>:
       <span class="kw">POSTGRES_USER</span>: root
       <span class="kw">POSTGRES_PASSWORD</span>: root
@@ -333,7 +338,11 @@ docker run hello-world   <span class="com"># test : télécharge et lance un min
     <span class="kw">ports</span>:
       - <span class="str">"5432:5432"</span>   <span class="com"># hote:conteneur</span>
     <span class="kw">volumes</span>:
-      - ./bibliotheque_seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro</code></pre>
+      - ./bibliotheque_seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+      - biblio_data:/var/lib/postgresql/data   <span class="com"># les donnees survivent aux redemarrages</span>
+
+<span class="kw">volumes</span>:
+  <span class="kw">biblio_data</span>:</code></pre>
 
     <p>Placez-vous dans le dossier (dans un terminal) et lancez&nbsp;:</p>
     <pre class="bash"><code>cd chemin/vers/le/dossier
