@@ -1,0 +1,25 @@
+# =====================================================================
+# 1BDD3 - Base de donnees BIBLIOTHEQUE (PostgreSQL)
+# Monte un PostgreSQL 16 et charge automatiquement le mock au 1er demarrage.
+# Lancer :  docker compose up -d
+# Arreter :  docker compose down          (garde les donnees)
+# Repartir de zero : docker compose down -v   (efface le volume)
+# =====================================================================
+services:
+  bibliotheque-db:
+    image: postgres:16
+    container_name: bibliotheque
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: bibliotheque
+    ports:
+      - "5432:5432"          # <hote>:<conteneur>  -> on se connecte sur localhost:5432
+    volumes:
+      # Tout script .sql place ici est execute au tout premier demarrage.
+      - ./bibliotheque_seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+      - biblio_data:/var/lib/postgresql/data
+
+volumes:
+  biblio_data:
