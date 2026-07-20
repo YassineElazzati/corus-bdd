@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1BDD3 — Jour 3 : Premiers pas en SQL</title>
+<style>
+  :root{
+    --ink:#1b2330; --ink-soft:#54606f; --paper:#f6f7f4; --panel:#fff;
+    --canvas-dot:rgba(38,58,99,.10); --line:#dcdfd7;
+    --navy:#263a63; --navy-soft:#4a5c8c; --gold:#b0812a; --gold-bg:#f7f0dc;
+    --link:#356aa8; --link-bg:#e9f0f9;
+    --amber-bg:#fbf3e3; --amber-bd:#cf9a35; --amber-tx:#7a5410;
+    --blue-bg:#e9f0f9;  --blue-bd:#356aa8;  --blue-tx:#26466f;
+    --purple-bg:#f0edf8; --purple-bd:#7259b8; --purple-tx:#41306f;
+    --green-bg:#e8f3ec; --green-bd:#379159; --green-tx:#1e5c37;
+    --meta-bg:#f6efdc;  --meta-bd:#b0812a;  --meta-tx:#6b4d12;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.65;
+    background-color:var(--paper);
+    background-image:radial-gradient(var(--canvas-dot) 1.1px,transparent 1.1px);
+    background-size:22px 22px;background-attachment:fixed;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{display:flex;align-items:flex-start;max-width:1200px;margin:0 auto;}
+  nav.toc{position:sticky;top:0;align-self:flex-start;width:262px;flex:0 0 262px;height:100vh;overflow-y:auto;
+    padding:24px 16px 40px 20px;border-right:1px solid var(--line);background:rgba(255,255,255,.72);backdrop-filter:blur(2px);}
+  nav.toc .toc-title{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-soft);font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:7px;}
+  nav.toc .toc-title::before{content:"▤";color:var(--gold);font-size:.9rem;}
+  nav.toc .toc-note{font-family:var(--mono);font-size:.62rem;color:#8b93a1;margin:0 0 14px;letter-spacing:.04em;}
+  nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:tocnum;}
+  nav.toc > ol > li{counter-increment:tocnum;margin:1px 0;}
+  nav.toc a{display:flex;gap:9px;text-decoration:none;color:var(--ink-soft);padding:5px 9px;border-radius:6px;font-size:.9rem;line-height:1.35;border-left:2px solid transparent;}
+  nav.toc > ol > li > a::before{content:counter(tocnum,decimal-leading-zero);font-family:var(--mono);font-size:.72rem;color:var(--gold);font-weight:700;padding-top:2px;flex:0 0 auto;}
+  nav.toc a:hover{background:var(--gold-bg);color:var(--navy);border-left-color:var(--gold);}
+
+  main{flex:1 1 auto;min-width:0;padding:40px 40px 90px;max-width:860px;}
+
+  header.entity{border:1.5px solid var(--navy);border-radius:10px;overflow:hidden;background:var(--panel);margin-bottom:30px;box-shadow:0 1px 0 var(--line),6px 6px 0 rgba(38,58,99,.06);}
+  .entity-bar{background:var(--navy);color:#fff;padding:9px 16px;font-family:var(--mono);font-size:.86rem;letter-spacing:.02em;display:flex;align-items:center;gap:9px;}
+  .entity-bar .glyph{color:var(--gold);}
+  .entity-bar .badge{margin-left:auto;font-size:.62rem;letter-spacing:.14em;background:rgba(255,255,255,.14);padding:2px 8px;border-radius:4px;}
+  .entity-body{padding:22px 24px 6px;}
+  .entity-body .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-soft);font-weight:700;margin-bottom:10px;}
+  .entity-body h1{font-size:2rem;line-height:1.13;margin:0 0 8px;color:var(--navy);letter-spacing:-.015em;font-weight:800;}
+  .entity-body .sub{color:var(--ink-soft);font-size:1.02rem;margin:0 0 4px;}
+  .cols-cap{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:#8b93a1;padding:10px 24px 6px;border-top:1px dashed var(--line);}
+  ul.columns{list-style:none;margin:0;padding:0 24px 18px;}
+  ul.columns li{display:flex;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px solid #eef0ea;font-size:.96rem;}
+  ul.columns li:last-child{border-bottom:none;}
+  ul.columns li .num{font-family:var(--mono);font-size:.72rem;color:var(--gold);font-weight:700;flex:0 0 26px;}
+  ul.columns li .colname{flex:1 1 auto;}
+  ul.columns li .type{font-family:var(--mono);font-size:.68rem;color:var(--link);background:var(--link-bg);padding:2px 8px;border-radius:4px;white-space:nowrap;}
+
+  details.toc-mobile{display:none;}
+  .prereq-lead{margin-top:6px;}
+  .lead{font-size:1.05rem;color:var(--ink-soft);}
+
+  main{counter-reset:sec;}
+  h2{counter-increment:sec;counter-reset:sub;font-size:1.48rem;color:var(--navy);margin:54px 0 14px;font-weight:800;letter-spacing:-.01em;scroll-margin-top:14px;display:flex;align-items:center;gap:12px;padding-bottom:9px;border-bottom:2px solid var(--navy);}
+  h2::before{content:"§" counter(sec);font-family:var(--mono);font-size:.8rem;font-weight:700;color:#fff;background:var(--navy);padding:3px 9px;border-radius:5px;letter-spacing:.02em;flex:0 0 auto;}
+  h3{counter-increment:sub;font-size:1.12rem;color:var(--ink);margin:30px 0 8px;font-weight:700;scroll-margin-top:14px;display:flex;gap:10px;align-items:baseline;}
+  h3::before{content:counter(sec) "." counter(sub);font-family:var(--mono);font-size:.78rem;color:var(--gold);font-weight:700;flex:0 0 auto;}
+  p{margin:.6em 0;} strong{color:var(--ink);}
+  ul.clean,ol.clean{padding-left:22px;} ul.clean li,ol.clean li{margin:5px 0;}
+  ol.steps{padding-left:22px;} ol.steps li{margin:8px 0;}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.93rem;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  thead th{background:var(--navy);color:#fff;font-weight:600;border-color:var(--navy);font-family:var(--mono);font-size:.82rem;letter-spacing:.01em;}
+  tbody tr:nth-child(even){background:#f4f5f0;}
+  td code{white-space:nowrap;}
+
+  code{font-family:var(--mono);font-size:.86em;background:#edefe9;padding:.08em .38em;border-radius:4px;color:#33405a;}
+  pre{background:#1a2130;color:#e7ebf2;border-radius:9px;padding:0 0 16px;overflow:hidden;font-family:var(--mono);font-size:.85rem;line-height:1.6;margin:14px 0;border:1px solid #0f1420;}
+  pre::before{content:"sql";display:block;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:#8b93a1;background:#141a27;padding:6px 16px;border-bottom:1px solid #0f1420;}
+  pre.bash::before{content:"bash";} pre.powershell::before{content:"powershell";} pre.yaml::before{content:"docker-compose.yml";} pre.text::before{content:"resultat";} pre.mld::before{content:"mld";}
+  pre code{background:none;padding:0 18px;color:inherit;font-size:1em;display:block;margin-top:14px;overflow-x:auto;}
+  .kw{color:#c792ea;} .str{color:#8bd49c;} .com{color:#8790a0;font-style:italic;} .num{color:#e0a366;} .fn{color:#82aaff;} .op{color:#89ddff;}
+
+  .box{border-radius:9px;padding:13px 16px;margin:16px 0;border-left:5px solid;font-size:.95rem;background:var(--panel);}
+  .box .lbl{font-weight:700;display:block;margin-bottom:3px;font-family:var(--mono);font-size:.82rem;}
+  .box.warn{background:var(--amber-bg);border-color:var(--amber-bd);} .box.warn .lbl{color:var(--amber-tx);}
+  .box.tip{background:var(--blue-bg);border-color:var(--blue-bd);} .box.tip .lbl{color:var(--blue-tx);}
+  .box.recall{background:var(--purple-bg);border-color:var(--purple-bd);} .box.recall .lbl{color:var(--purple-tx);}
+  .box.key{background:var(--green-bg);border-color:var(--green-bd);} .box.key .lbl{color:var(--green-tx);}
+  .box.meta{background:var(--meta-bg);border-color:var(--meta-bd);} .box.meta .lbl{color:var(--meta-tx);} .box.meta em{color:var(--meta-tx);}
+
+  figure{margin:22px 0;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:4px 4px 0 rgba(38,58,99,.05);}
+  figure svg{width:100%;height:auto;display:block;}
+  figcaption{font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);text-align:center;margin-top:10px;letter-spacing:.02em;}
+
+  .filebar{display:flex;align-items:center;gap:10px;background:var(--gold-bg);border:1px solid #e7d9b4;border-radius:8px;padding:10px 14px;margin:14px 0;font-size:.92rem;}
+  .filebar .fname{font-family:var(--mono);font-weight:700;color:var(--meta-tx);}
+
+  .recap thead th{background:var(--gold);color:#3a2a06;border-color:var(--gold);}
+  .recap tbody td:first-child{border-left:3px solid var(--gold);}
+  .footer-note{margin-top:36px;color:var(--ink-soft);font-size:.9rem;border-top:1px solid var(--line);padding-top:14px;}
+
+  @media (max-width:900px){
+    body{background-size:18px 18px;}
+    nav.toc{display:none;}
+    main{padding:22px 16px 70px;}
+    .entity-body{padding:18px 18px 4px;}
+    .entity-body h1{font-size:1.55rem;}
+    .cols-cap,ul.columns{padding-left:18px;padding-right:18px;}
+    ul.columns li .type{display:none;}
+    details.toc-mobile{display:block;margin:0 0 22px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:10px 14px;}
+    details.toc-mobile summary{font-family:var(--mono);font-weight:700;color:var(--navy);cursor:pointer;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;}
+    details.toc-mobile ol{margin:10px 0 2px;padding-left:20px;} details.toc-mobile a{color:var(--navy-soft);text-decoration:none;}
+    h2{font-size:1.28rem;}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="toc" aria-label="Sommaire">
+    <p class="toc-title">Schéma du cours</p>
+    <p class="toc-note">6 sections · \c bibliotheque</p>
+    <ol>
+      <li><a href="#s1">Le schéma de la base</a></li>
+      <li><a href="#s2">Installer Docker (WSL2)</a></li>
+      <li><a href="#s3">Lancer le conteneur</a></li>
+      <li><a href="#s4">Se connecter avec DBeaver</a></li>
+      <li><a href="#s5">Peupler la base (le mock)</a></li>
+      <li><a href="#s6">Les commandes SQL de base</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="entity">
+      <div class="entity-bar"><span class="glyph">▤</span> 1BDD3.jour3 <span class="badge">COURS</span></div>
+      <div class="entity-body">
+        <div class="eyebrow">Bases de Données · Jour 3</div>
+        <h1>Premiers pas en SQL&nbsp;: de Docker à la requête</h1>
+        <p class="sub">On quitte le papier. On lance une vraie base «&nbsp;bibliothèque&nbsp;» dans un conteneur, on s'y connecte, et on écrit nos premières requêtes.</p>
+      </div>
+      <div class="cols-cap">colonnes — au programme aujourd'hui</div>
+      <ul class="columns">
+        <li><span class="num">01</span><span class="colname">Le schéma de la base (MCD → MLD)</span><span class="type">rappel</span></li>
+        <li><span class="num">02</span><span class="colname">Installer Docker sur Windows (WSL2)</span><span class="type">setup</span></li>
+        <li><span class="num">03</span><span class="colname">Lancer le conteneur de la base</span><span class="type">setup</span></li>
+        <li><span class="num">04</span><span class="colname">Se connecter avec DBeaver</span><span class="type">outil</span></li>
+        <li><span class="num">05</span><span class="colname">Peupler la base avec le mock (~230 lignes)</span><span class="type">données</span></li>
+        <li><span class="num">06</span><span class="colname">Les commandes SQL de base</span><span class="type">sql</span></li>
+      </ul>
+    </header>
+
+    <details class="toc-mobile">
+      <summary>▤ Schéma du cours</summary>
+      <ol>
+        <li><a href="#s1">Le schéma de la base</a></li>
+        <li><a href="#s2">Installer Docker (WSL2)</a></li>
+        <li><a href="#s3">Lancer le conteneur</a></li>
+        <li><a href="#s4">Se connecter avec DBeaver</a></li>
+        <li><a href="#s5">Peupler la base (le mock)</a></li>
+        <li><a href="#s6">Les commandes SQL de base</a></li>
+      </ol>
+    </details>
+
+    <div class="box recall prereq-lead">
+      <span class="lbl">📝 Prérequis</span>
+      <p>Les <strong>Jours 1 &amp; 2</strong>&nbsp;: vous savez lire un <strong>MLD</strong> (tables, clés primaires 🔑, clés étrangères #). Ici, ce MLD devient une <em>vraie</em> base PostgreSQL que l'on interroge. Côté machine&nbsp;: Windows avec les droits administrateur.</p>
+    </div>
+
+    <p class="lead">Fil rouge&nbsp;: une base <strong>bibliothèque</strong> — auteurs, éditeurs, livres, adhérents, emprunts. Tout est préparé dans un conteneur&nbsp;: vous n'aurez qu'à le lancer.</p>
+
+    <!-- ============ 1 ============ -->
+    <h2 id="s1">Le schéma de la base «&nbsp;bibliothèque&nbsp;»</h2>
+    <p>Avant d'écrire une requête, il faut connaître le terrain. Voici le MCD, puis le MLD qui a servi à créer les tables.</p>
+
+    <h3>Le MCD — le plan</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 Rappel métaphore</span>
+      <p>Le MCD reste le <strong>plan d'architecte</strong> du Jour 2&nbsp;: des entités (rectangles), des associations (ovales, nommées par un verbe) et des cardinalités. Voici celui de notre bibliothèque.</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 720 400" role="img" aria-label="MCD bibliothèque">
+        <style>
+          .ent{fill:#eef1fa;stroke:#263a63;stroke-width:1.5;}
+          .enth{fill:#263a63;}
+          .entt{fill:#fff;font:600 12px 'Inter',sans-serif;}
+          .attr{fill:#263a63;font:10.5px 'Inter',sans-serif;}
+          .assoc{fill:#f6efdc;stroke:#b0812a;stroke-width:1.5;}
+          .assoct{fill:#6b4d12;font:600 10.5px 'Inter',sans-serif;}
+          .card{fill:#7a5410;font:italic 10px 'Inter',sans-serif;}
+          .lnk{stroke:#356aa8;stroke-width:1.6;}
+        </style>
+        <!-- AUTEUR -->
+        <rect class="ent" x="8" y="34" width="132" height="76" rx="4"/>
+        <rect class="enth" x="8" y="34" width="132" height="20" rx="4"/>
+        <text class="entt" x="74" y="48" text-anchor="middle">AUTEUR</text>
+        <text class="attr" x="16" y="70"><tspan text-decoration="underline">id_auteur</tspan></text>
+        <text class="attr" x="16" y="86">nom, prenom</text>
+        <text class="attr" x="16" y="101">nationalite</text>
+        <!-- ECRIRE -->
+        <ellipse class="assoc" cx="200" cy="72" rx="42" ry="23"/>
+        <text class="assoct" x="200" y="76" text-anchor="middle">ECRIRE</text>
+        <line class="lnk" x1="140" y1="72" x2="158" y2="72"/><text class="card" x="142" y="66">0,n</text>
+        <line class="lnk" x1="242" y1="72" x2="270" y2="72"/><text class="card" x="246" y="66">1,n</text>
+        <!-- LIVRE -->
+        <rect class="ent" x="270" y="30" width="150" height="90" rx="4"/>
+        <rect class="enth" x="270" y="30" width="150" height="20" rx="4"/>
+        <text class="entt" x="345" y="44" text-anchor="middle">LIVRE</text>
+        <text class="attr" x="278" y="66"><tspan text-decoration="underline">id_livre</tspan></text>
+        <text class="attr" x="278" y="81">titre, isbn</text>
+        <text class="attr" x="278" y="96">annee, genre</text>
+        <text class="attr" x="278" y="111">nb_pages</text>
+        <!-- PUBLIER -->
+        <ellipse class="assoc" cx="490" cy="72" rx="42" ry="23"/>
+        <text class="assoct" x="490" y="76" text-anchor="middle">PUBLIER</text>
+        <line class="lnk" x1="420" y1="72" x2="448" y2="72"/><text class="card" x="424" y="66">1,1</text>
+        <line class="lnk" x1="532" y1="72" x2="560" y2="72"/><text class="card" x="536" y="66">1,n</text>
+        <!-- EDITEUR -->
+        <rect class="ent" x="560" y="34" width="150" height="76" rx="4"/>
+        <rect class="enth" x="560" y="34" width="150" height="20" rx="4"/>
+        <text class="entt" x="635" y="48" text-anchor="middle">EDITEUR</text>
+        <text class="attr" x="568" y="70"><tspan text-decoration="underline">id_editeur</tspan></text>
+        <text class="attr" x="568" y="86">nom, ville</text>
+        <text class="attr" x="568" y="101">pays</text>
+        <!-- LIVRE -> CONCERNER -->
+        <line class="lnk" x1="345" y1="120" x2="345" y2="180"/><text class="card" x="351" y="152">0,n</text>
+        <ellipse class="assoc" cx="345" cy="205" rx="48" ry="24"/>
+        <text class="assoct" x="345" y="209" text-anchor="middle">CONCERNER</text>
+        <line class="lnk" x1="345" y1="229" x2="345" y2="272"/><text class="card" x="351" y="254">1,1</text>
+        <!-- EMPRUNT -->
+        <rect class="ent" x="262" y="272" width="166" height="96" rx="4"/>
+        <rect class="enth" x="262" y="272" width="166" height="20" rx="4"/>
+        <text class="entt" x="345" y="286" text-anchor="middle">EMPRUNT</text>
+        <text class="attr" x="270" y="308"><tspan text-decoration="underline">id_emprunt</tspan></text>
+        <text class="attr" x="270" y="323">date_emprunt</text>
+        <text class="attr" x="270" y="338">date_retour_prevue</text>
+        <text class="attr" x="270" y="353">date_retour_reelle</text>
+        <!-- EMPRUNT -> EFFECTUER -->
+        <line class="lnk" x1="428" y1="320" x2="470" y2="320"/><text class="card" x="432" y="314">1,1</text>
+        <ellipse class="assoc" cx="512" cy="320" rx="48" ry="24"/>
+        <text class="assoct" x="512" y="324" text-anchor="middle">EFFECTUER</text>
+        <line class="lnk" x1="560" y1="320" x2="588" y2="320"/><text class="card" x="562" y="314">0,n</text>
+        <!-- ADHERENT -->
+        <rect class="ent" x="588" y="286" width="126" height="70" rx="4"/>
+        <rect class="enth" x="588" y="286" width="126" height="20" rx="4"/>
+        <text class="entt" x="651" y="300" text-anchor="middle">ADHERENT</text>
+        <text class="attr" x="596" y="322"><tspan text-decoration="underline">id_adherent</tspan></text>
+        <text class="attr" x="596" y="337">nom, email</text>
+        <text class="attr" x="596" y="351">ville</text>
+      </svg>
+      <figcaption>MCD bibliothèque — 5 entités · 4 associations · cardinalités (min,max)</figcaption>
+    </figure>
+
+    <p>À lire simplement&nbsp;: un <strong>livre</strong> est écrit par un ou plusieurs <strong>auteurs</strong> (n-n), il est publié par exactement un <strong>éditeur</strong>, et il peut apparaître dans plusieurs <strong>emprunts</strong>. Chaque <strong>emprunt</strong> concerne un seul livre et est effectué par un seul <strong>adhérent</strong>.</p>
+
+    <h3>Le MLD — les tables</h3>
+    <p>En appliquant les 3 règles du Jour 2, on obtient les tables réelles&nbsp;:</p>
+    <pre class="mld"><code><span class="com">-- # = clé étrangère (FK)</span>
+EDITEUR  (<span class="kw">id_editeur</span>, nom, ville, pays)
+AUTEUR   (<span class="kw">id_auteur</span>, nom, prenom, nationalite, annee_naissance)
+LIVRE    (<span class="kw">id_livre</span>, titre, isbn, annee_publication, genre, nb_pages, <span class="num">#id_editeur</span>)
+ECRIRE   (<span class="kw">#id_livre</span>, <span class="kw">#id_auteur</span>)                 <span class="com">-- table associative (n-n)</span>
+ADHERENT (<span class="kw">id_adherent</span>, nom, prenom, email, ville, date_inscription)
+EMPRUNT  (<span class="kw">id_emprunt</span>, date_emprunt, date_retour_prevue,
+          date_retour_reelle, <span class="num">#id_livre</span>, <span class="num">#id_adherent</span>)</code></pre>
+
+    <table>
+      <thead><tr><th>Table</th><th>Rôle</th><th>Clé primaire</th><th>Clés étrangères</th></tr></thead>
+      <tbody>
+        <tr><td><code>editeur</code></td><td>Les maisons d'édition</td><td>id_editeur</td><td>—</td></tr>
+        <tr><td><code>auteur</code></td><td>Les auteurs</td><td>id_auteur</td><td>—</td></tr>
+        <tr><td><code>livre</code></td><td>Les ouvrages</td><td>id_livre</td><td>id_editeur</td></tr>
+        <tr><td><code>ecrire</code></td><td>Lien livre ↔ auteur (n-n)</td><td>(id_livre, id_auteur)</td><td>id_livre, id_auteur</td></tr>
+        <tr><td><code>adherent</code></td><td>Les inscrits</td><td>id_adherent</td><td>—</td></tr>
+        <tr><td><code>emprunt</code></td><td>Un prêt de livre</td><td>id_emprunt</td><td>id_livre, id_adherent</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ============ 2 ============ -->
+    <h2 id="s2">Installer Docker sur Windows (via WSL2)</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p><strong>Docker</strong>, c'est un <strong>conteneur maritime préemballé</strong>. À l'intérieur&nbsp;: la base PostgreSQL, sa version exacte, sa configuration, les données. On expédie la boîte&nbsp;; elle s'ouvre <em>à l'identique</em> sur n'importe quelle machine. Fini le «&nbsp;ça marche chez moi&nbsp;».</p>
+    </div>
+    <p><strong>Définition.</strong> Docker fait tourner des applications dans des <strong>conteneurs</strong> isolés. Sur Windows, Docker s'appuie sur <strong>WSL2</strong> («&nbsp;Windows Subsystem for Linux&nbsp;», c'est-à-dire «&nbsp;sous-système Linux pour Windows&nbsp;»), un mini-Linux intégré à Windows.</p>
+
+    <h3>Étape 1 — Installer WSL2</h3>
+    <p>Ouvrez <strong>PowerShell en administrateur</strong> (clic droit sur le menu Démarrer → «&nbsp;Terminal (administrateur)&nbsp;») et tapez&nbsp;:</p>
+    <pre class="powershell"><code>wsl --install</code></pre>
+    <p>Cette commande installe WSL2 et une distribution Ubuntu par défaut.</p>
+    <div class="box warn">
+      <span class="lbl">⚠️ Redémarrage obligatoire</span>
+      <p>Après <code>wsl --install</code>, il faut <strong>redémarrer le PC</strong> pour finaliser. Au retour, Ubuntu peut demander de créer un identifiant/mot de passe Linux&nbsp;: c'est normal.</p>
+    </div>
+    <p>Pour vérifier que WSL2 est bien là&nbsp;:</p>
+    <pre class="powershell"><code>wsl --status
+wsl --list --verbose   <span class="com"># la colonne VERSION doit afficher 2</span></code></pre>
+
+    <h3>Étape 2 — Installer Docker Desktop</h3>
+    <p>Toujours dans PowerShell&nbsp;:</p>
+    <pre class="powershell"><code>winget install -e --id Docker.DockerDesktop</code></pre>
+    <p>(Ou téléchargez «&nbsp;Docker Desktop for Windows&nbsp;» depuis le site officiel, puis lancez l'installeur.)</p>
+    <ol class="steps">
+      <li>Lancez <strong>Docker Desktop</strong> une première fois et laissez-le démarrer (icône baleine dans la barre des tâches).</li>
+      <li>Dans <em>Settings → Resources → WSL integration</em>, vérifiez que l'intégration WSL2 est activée.</li>
+    </ol>
+    <p>Vérifiez enfin que Docker répond&nbsp;:</p>
+    <pre class="bash"><code>docker --version
+docker run hello-world   <span class="com"># test : télécharge et lance un mini-conteneur</span></code></pre>
+    <div class="box tip">
+      <span class="lbl">💡 Docker Desktop doit tourner</span>
+      <p>Tant que la baleine Docker Desktop n'est pas démarrée, aucune commande <code>docker</code> ne fonctionne. Gardez-la ouverte pendant tout le TP.</p>
+    </div>
+
+    <!-- ============ 3 ============ -->
+    <h2 id="s3">Lancer le conteneur de la base</h2>
+    <p>On vous fournit deux fichiers à mettre dans un même dossier&nbsp;:</p>
+    <div class="filebar"><span>📄</span><span class="fname">docker-compose.yml</span><span>— la recette du conteneur PostgreSQL</span></div>
+    <div class="filebar"><span>📄</span><span class="fname">bibliotheque_seed.sql</span><span>— le schéma + les ~230 lignes de données</span></div>
+
+    <p>Le fichier <code>docker-compose.yml</code> décrit tout&nbsp;:</p>
+    <pre class="yaml"><code><span class="kw">services</span>:
+  <span class="kw">bibliotheque-db</span>:
+    <span class="kw">image</span>: postgres:<span class="num">16</span>
+    <span class="kw">container_name</span>: bibliotheque
+    <span class="kw">environment</span>:
+      <span class="kw">POSTGRES_USER</span>: root
+      <span class="kw">POSTGRES_PASSWORD</span>: root
+      <span class="kw">POSTGRES_DB</span>: bibliotheque
+    <span class="kw">ports</span>:
+      - <span class="str">"5432:5432"</span>   <span class="com"># hote:conteneur</span>
+    <span class="kw">volumes</span>:
+      - ./bibliotheque_seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro</code></pre>
+
+    <p>Placez-vous dans le dossier (dans un terminal) et lancez&nbsp;:</p>
+    <pre class="bash"><code>cd chemin/vers/le/dossier
+docker compose up -d      <span class="com"># -d = en arriere-plan (detached)</span></code></pre>
+
+    <p>Vérifiez que le conteneur tourne&nbsp;:</p>
+    <pre class="bash"><code>docker ps                 <span class="com"># doit lister "bibliotheque"</span>
+docker compose logs -f    <span class="com"># suit le demarrage (Ctrl+C pour quitter)</span></code></pre>
+
+    <div class="box key">
+      <span class="lbl">🎯 Le mock se charge tout seul</span>
+      <p>Au <strong>tout premier démarrage</strong>, PostgreSQL exécute automatiquement tout fichier <code>.sql</code> placé dans <code>/docker-entrypoint-initdb.d/</code>. Notre <code>bibliotheque_seed.sql</code> y est monté&nbsp;: la base est donc <strong>déjà remplie</strong> quand le conteneur est prêt. (Voir §5 si vous devez la recharger.)</p>
+    </div>
+    <div class="box warn">
+      <span class="lbl">⚠️ Le port 5432 est déjà pris ?</span>
+      <p>Si un PostgreSQL est déjà installé sur la machine, le port 5432 est occupé. Changez la <em>partie gauche</em> du mapping, par exemple <code>"5433:5432"</code>, puis connectez-vous sur le port <code>5433</code>.</p>
+    </div>
+
+    <!-- ============ 4 ============ -->
+    <h2 id="s4">Se connecter avec DBeaver</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p><strong>DBeaver</strong> est le <strong>guichet</strong> depuis lequel vous remettez vos «&nbsp;bons de commande&nbsp;» (les requêtes SQL) au magasinier (le SGBD PostgreSQL). Le conteneur est le magasin&nbsp;; DBeaver est le comptoir.</p>
+    </div>
+    <p>Dans DBeaver&nbsp;: <strong>Base de données → Nouvelle connexion → PostgreSQL</strong>, puis remplissez les champs.</p>
+
+    <table>
+      <thead><tr><th>Champ DBeaver</th><th>Valeur</th><th>D'où ça vient</th></tr></thead>
+      <tbody>
+        <tr><td>Host / Serveur</td><td><code>localhost</code></td><td>Le conteneur publie son port sur votre machine</td></tr>
+        <tr><td>Port</td><td><code>5432</code></td><td>La partie gauche de <code>"5432:5432"</code></td></tr>
+        <tr><td>Database</td><td><code>bibliotheque</code></td><td>La variable <code>POSTGRES_DB</code></td></tr>
+        <tr><td>Username</td><td><code>root</code></td><td>La variable <code>POSTGRES_USER</code></td></tr>
+        <tr><td>Password</td><td><code>root</code></td><td>La variable <code>POSTGRES_PASSWORD</code></td></tr>
+      </tbody>
+    </table>
+
+    <ol class="steps">
+      <li>Si DBeaver propose de <strong>télécharger le driver</strong> PostgreSQL, acceptez.</li>
+      <li>Cliquez <strong>Test Connection</strong>. Si c'est vert&nbsp;: <strong>Finish</strong>.</li>
+    </ol>
+
+    <div class="box warn">
+      <span class="lbl">⚠️ Où sont les tables ? (schéma public)</span>
+      <p>En PostgreSQL, les tables vivent dans un <strong>schéma</strong>, <code>public</code> par défaut. Dans l'arbre DBeaver, dépliez <code>bibliotheque → Schemas → public → Tables</code>. Si vous ne voyez pas d'autres bases, activez au besoin <em>Show all databases</em> dans les réglages de la connexion (onglet PostgreSQL).</p>
+    </div>
+    <div class="box tip">
+      <span class="lbl">💡 Écrire ses requêtes</span>
+      <p>Une fois connecté, l'onglet <em>SQL Editor</em> (icône ou <kbd>Ctrl+]</kbd>) sert à taper vos requêtes&nbsp;; <kbd>Ctrl+Entrée</kbd> exécute la requête courante.</p>
+    </div>
+
+    <!-- ============ 5 ============ -->
+    <h2 id="s5">Peupler la base avec le mock</h2>
+    <p>Avec le <code>docker-compose.yml</code> ci-dessus, <strong>rien à faire</strong>&nbsp;: le mock est chargé au premier démarrage. Ce jeu de données contient environ <strong>230 lignes</strong>&nbsp;:</p>
+    <table>
+      <thead><tr><th>Table</th><th>Lignes</th></tr></thead>
+      <tbody>
+        <tr><td>editeur</td><td>8</td></tr>
+        <tr><td>auteur</td><td>25</td></tr>
+        <tr><td>livre</td><td>50</td></tr>
+        <tr><td>ecrire</td><td>58</td></tr>
+        <tr><td>adherent</td><td>30</td></tr>
+        <tr><td>emprunt</td><td>60</td></tr>
+      </tbody>
+    </table>
+
+    <p>Vérifiez que tout est là (dans le SQL Editor de DBeaver)&nbsp;:</p>
+    <pre><code><span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">FROM</span> livre;    <span class="com">-- doit renvoyer 50</span></code></pre>
+
+    <h3>Recharger la base à la main (si besoin)</h3>
+    <p>Si vous devez rejouer le mock (base modifiée, exercice raté…), deux options.</p>
+    <p><strong>Option A — repartir de zéro</strong> (efface tout, recharge le seed au démarrage)&nbsp;:</p>
+    <pre class="bash"><code>docker compose down -v    <span class="com"># -v supprime le volume de données</span>
+docker compose up -d</code></pre>
+    <p><strong>Option B — rejouer le fichier</strong> dans le conteneur déjà lancé (le seed supprime puis recrée les tables, il est rejouable)&nbsp;:</p>
+    <pre class="bash"><code>docker exec -i bibliotheque psql -U root -d bibliotheque &lt; bibliotheque_seed.sql</code></pre>
+    <div class="box tip">
+      <span class="lbl">💡 Ou tout simplement dans DBeaver</span>
+      <p>Ouvrez le fichier <code>bibliotheque_seed.sql</code> dans DBeaver (<em>SQL Editor → ouvrir un script</em>) et exécutez-le en entier avec <kbd>Alt+X</kbd>.</p>
+    </div>
+
+    <!-- ============ 6 ============ -->
+    <h2 id="s6">Les commandes SQL de base</h2>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore filée</span>
+      <p>Une requête SQL est un <strong>bon de commande</strong> remis au bibliothécaire. <code>SELECT</code> dit «&nbsp;apporte-moi…&nbsp;», <code>FROM</code> précise «&nbsp;dans quel rayon&nbsp;», <code>WHERE</code> pose les critères, <code>ORDER BY</code> l'ordre de présentation.</p>
+    </div>
+
+    <h3>SELECT … FROM — tout lire</h3>
+    <p><strong>Syntaxe.</strong></p>
+    <pre><code><span class="kw">SELECT</span> * <span class="kw">FROM</span> nom_de_la_table;</code></pre>
+    <p><strong>Exemple.</strong></p>
+    <pre><code><span class="kw">SELECT</span> * <span class="kw">FROM</span> livre;</code></pre>
+    <p><em>Analysons ligne par ligne&nbsp;:</em> <code>SELECT *</code> demande <strong>toutes les colonnes</strong> (l'étoile = «&nbsp;tout&nbsp;»)&nbsp;; <code>FROM livre</code> indique la table&nbsp;; le <code>;</code> termine la requête.</p>
+    <div class="box warn">
+      <span class="lbl">⚠️ N'oubliez pas le point-virgule</span>
+      <p>Chaque requête se termine par <code>;</code>. C'est ce qui dit au SGBD «&nbsp;j'ai fini, exécute&nbsp;».</p>
+    </div>
+
+    <h3>Choisir les colonnes</h3>
+    <pre><code><span class="kw">SELECT</span> titre, annee_publication <span class="kw">FROM</span> livre;</code></pre>
+    <div class="box tip">
+      <span class="lbl">💡 Bonne pratique</span>
+      <p>En vrai projet, on évite <code>SELECT *</code>&nbsp;: on nomme les colonnes utiles. C'est plus lisible et plus rapide.</p>
+    </div>
+
+    <h3>WHERE — filtrer les lignes</h3>
+    <pre><code><span class="kw">SELECT</span> titre, genre <span class="kw">FROM</span> livre
+<span class="kw">WHERE</span> genre <span class="op">=</span> <span class="str">'Roman'</span>;</code></pre>
+    <p>Opérateurs utiles&nbsp;: <code>=</code> (égal), <code>&lt;&gt;</code> (différent), <code>&lt; &gt; &lt;= &gt;=</code>, et les combinateurs <code>AND</code> / <code>OR</code>.</p>
+    <pre><code><span class="kw">SELECT</span> titre, annee_publication, nb_pages <span class="kw">FROM</span> livre
+<span class="kw">WHERE</span> annee_publication <span class="op">&gt;</span> <span class="num">1950</span> <span class="kw">AND</span> nb_pages <span class="op">&lt;</span> <span class="num">300</span>;</code></pre>
+    <div class="box warn">
+      <span class="lbl">⚠️ Deux pièges classiques</span>
+      <p><strong>1.</strong> En SQL, l'égalité s'écrit avec <strong>un seul</strong> <code>=</code> (pas <code>==</code> comme en Java). <br>
+      <strong>2.</strong> Le texte va entre <strong>apostrophes simples</strong>&nbsp;: <code>'Roman'</code>, jamais entre guillemets doubles.</p>
+    </div>
+
+    <h3>ORDER BY et LIMIT — trier, limiter</h3>
+    <pre><code><span class="kw">SELECT</span> titre, annee_publication <span class="kw">FROM</span> livre
+<span class="kw">ORDER BY</span> annee_publication <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="num">10</span>;</code></pre>
+    <p><code>DESC</code> = décroissant («&nbsp;descending&nbsp;»), <code>ASC</code> = croissant (par défaut). <code>LIMIT 10</code> ne garde que les 10 premières lignes.</p>
+
+    <h3>DISTINCT et LIKE</h3>
+    <pre><code><span class="com">-- la liste des genres, sans doublon</span>
+<span class="kw">SELECT</span> <span class="kw">DISTINCT</span> genre <span class="kw">FROM</span> livre;
+
+<span class="com">-- les titres qui commencent par "L"</span>
+<span class="kw">SELECT</span> titre <span class="kw">FROM</span> livre <span class="kw">WHERE</span> titre <span class="kw">LIKE</span> <span class="str">'L%'</span>;</code></pre>
+    <p>Le <code>%</code> de <code>LIKE</code> remplace «&nbsp;n'importe quelle suite de caractères&nbsp;».</p>
+
+    <h3>Compter et calculer — les fonctions d'agrégation</h3>
+    <pre><code><span class="kw">SELECT</span> <span class="fn">COUNT</span>(*)      <span class="kw">FROM</span> emprunt;   <span class="com">-- combien d'emprunts ?</span>
+<span class="kw">SELECT</span> <span class="fn">AVG</span>(nb_pages) <span class="kw">FROM</span> livre;     <span class="com">-- nombre de pages moyen</span>
+<span class="kw">SELECT</span> <span class="fn">MIN</span>(annee_publication), <span class="fn">MAX</span>(annee_publication) <span class="kw">FROM</span> livre;</code></pre>
+    <p>Principales fonctions&nbsp;: <code>COUNT</code> (compter), <code>SUM</code> (somme), <code>AVG</code> (moyenne), <code>MIN</code>, <code>MAX</code>.</p>
+
+    <h3>GROUP BY — regrouper puis compter</h3>
+    <pre><code><span class="com">-- combien de livres par genre ?</span>
+<span class="kw">SELECT</span> genre, <span class="fn">COUNT</span>(*) <span class="kw">AS</span> nb
+<span class="kw">FROM</span> livre
+<span class="kw">GROUP BY</span> genre
+<span class="kw">ORDER BY</span> nb <span class="kw">DESC</span>;</code></pre>
+    <p><code>GROUP BY genre</code> range les livres par genre&nbsp;; <code>COUNT(*)</code> compte dans chaque groupe&nbsp;; <code>AS nb</code> renomme la colonne du résultat.</p>
+
+    <h3>JOIN — recoller deux tables</h3>
+    <div class="box meta">
+      <span class="lbl">🪄 La métaphore</span>
+      <p>Un <strong>JOIN</strong>, c'est <strong>suivre le renvoi</strong> (§Jour 2). La fiche <code>livre</code> contient <code>#id_editeur</code>&nbsp;: le JOIN va chercher la fiche <code>editeur</code> correspondante et recolle les deux.</p>
+    </div>
+    <pre><code><span class="com">-- chaque livre avec le nom de son editeur</span>
+<span class="kw">SELECT</span> livre.titre, editeur.nom
+<span class="kw">FROM</span> livre
+<span class="kw">JOIN</span> editeur <span class="kw">ON</span> livre.id_editeur <span class="op">=</span> editeur.id_editeur;</code></pre>
+    <p><em>La clause <code>ON</code> dit sur quelle égalité coller&nbsp;:</em> la clé étrangère d'un côté = la clé primaire de l'autre.</p>
+    <p>Pour la relation n-n (livre ↔ auteur), on passe par la table associative <code>ecrire</code>, avec <strong>deux</strong> JOIN&nbsp;:</p>
+    <pre><code><span class="com">-- chaque livre avec le(s) nom(s) de son/ses auteur(s)</span>
+<span class="kw">SELECT</span> livre.titre, auteur.nom
+<span class="kw">FROM</span> livre
+<span class="kw">JOIN</span> ecrire <span class="kw">ON</span> livre.id_livre  <span class="op">=</span> ecrire.id_livre
+<span class="kw">JOIN</span> auteur <span class="kw">ON</span> ecrire.id_auteur <span class="op">=</span> auteur.id_auteur;</code></pre>
+
+    <h3>INSERT, UPDATE, DELETE — écrire dans la base</h3>
+    <pre><code><span class="com">-- ajouter un auteur</span>
+<span class="kw">INSERT INTO</span> auteur (nom, prenom, nationalite, annee_naissance)
+<span class="kw">VALUES</span> (<span class="str">'Verne'</span>, <span class="str">'Jules'</span>, <span class="str">'Francaise'</span>, <span class="num">1828</span>);
+
+<span class="com">-- corriger un genre</span>
+<span class="kw">UPDATE</span> livre <span class="kw">SET</span> genre <span class="op">=</span> <span class="str">'Aventure'</span> <span class="kw">WHERE</span> id_livre <span class="op">=</span> <span class="num">25</span>;
+
+<span class="com">-- supprimer un emprunt</span>
+<span class="kw">DELETE FROM</span> emprunt <span class="kw">WHERE</span> id_emprunt <span class="op">=</span> <span class="num">12</span>;</code></pre>
+    <div class="box warn">
+      <span class="lbl">⚠️ Le piège le plus dangereux</span>
+      <p>Un <code>UPDATE</code> ou un <code>DELETE</code> <strong>sans <code>WHERE</code></strong> s'applique à <strong>toute la table</strong>. <code>DELETE FROM emprunt;</code> vide tous les emprunts. Vérifiez toujours votre <code>WHERE</code> <em>avant</em> d'exécuter.</p>
+    </div>
+
+    <!-- Recap -->
+    <h2 id="s7">Ce qu'il faut retenir</h2>
+    <table class="recap">
+      <thead><tr><th>Étape / commande</th><th>À quoi ça sert</th></tr></thead>
+      <tbody>
+        <tr><td><code>wsl --install</code></td><td>Installer le sous-système Linux (prérequis Docker)</td></tr>
+        <tr><td><code>docker compose up -d</code></td><td>Lancer le conteneur de la base en arrière-plan</td></tr>
+        <tr><td><code>docker ps</code></td><td>Vérifier que le conteneur tourne</td></tr>
+        <tr><td>DBeaver → PostgreSQL</td><td>localhost:5432 · base <code>bibliotheque</code> · root/root</td></tr>
+        <tr><td><code>SELECT … FROM … WHERE …</code></td><td>Lire et filtrer des lignes</td></tr>
+        <tr><td><code>ORDER BY / LIMIT</code></td><td>Trier et limiter le résultat</td></tr>
+        <tr><td><code>COUNT/AVG/MIN/MAX + GROUP BY</code></td><td>Compter, calculer, regrouper</td></tr>
+        <tr><td><code>JOIN … ON …</code></td><td>Recoller deux tables via une clé étrangère</td></tr>
+        <tr><td><code>INSERT / UPDATE / DELETE</code></td><td>Écrire, modifier, supprimer des données</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="s8">🎯 Réflexes SQL</h2>
+    <div class="box key">
+      <span class="lbl">🎯 Les 5 réflexes du débutant</span>
+      <ol class="clean" style="margin:.3em 0 0">
+        <li>Toujours finir par <code>;</code>.</li>
+        <li>Égalité = <strong>un seul</strong> <code>=</code> ; texte entre <strong>apostrophes simples</strong> <code>'…'</code>.</li>
+        <li>Jamais de <code>UPDATE</code>/<code>DELETE</code> sans <code>WHERE</code> (sauf intention réelle de tout toucher).</li>
+        <li>Un <code>JOIN</code> se fait <strong>sur une clé</strong> (FK = PK) via <code>ON</code>.</li>
+        <li>Docker Desktop doit tourner pour que <code>docker</code> réponde.</li>
+      </ol>
+    </div>
+
+    <p class="footer-note">
+      Prochaine étape&nbsp;: s'entraîner sur la base bibliothèque — filtres, tris, jointures et petits calculs. Gardez ce cours et le schéma de la §1 sous les yeux.
+    </p>
+
+  </main>
+</div>
+</body>
+</html>
